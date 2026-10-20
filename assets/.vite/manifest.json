@@ -1,0 +1,72 @@
+{
+  "../../../../ejaz-v3/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs": {
+    "file": "chunk-QAlc-4_W.js",
+    "name": "vision_bundle",
+    "src": "../../../../ejaz-v3/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "../../../../ejaz-v3/node_modules/cfb/cfb.js": {
+    "file": "chunk-CUKxfsZM.js",
+    "name": "cfb",
+    "src": "../../../../ejaz-v3/node_modules/cfb/cfb.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "../../../../ejaz-v3/node_modules/mammoth/lib/index.js": {
+    "file": "chunk-CV0gc9kq.js",
+    "name": "lib",
+    "src": "../../../../ejaz-v3/node_modules/mammoth/lib/index.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx",
+      "_chunk-Bk91cRg6.js"
+    ]
+  },
+  "../../../../ejaz-v3/node_modules/pdfjs-dist/build/pdf.mjs": {
+    "file": "chunk-DawNKBON.js",
+    "name": "pdf",
+    "src": "../../../../ejaz-v3/node_modules/pdfjs-dist/build/pdf.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "../../../../ejaz-v3/node_modules/tesseract.js/src/index.js": {
+    "file": "chunk-DP9MVVka.js",
+    "name": "src",
+    "src": "../../../../ejaz-v3/node_modules/tesseract.js/src/index.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "_chunk-Bk91cRg6.js": {
+    "file": "chunk-Bk91cRg6.js",
+    "name": "jszip.min",
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "main.tsx": {
+    "file": "app-C2d92I9j.js",
+    "name": "main",
+    "src": "main.tsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "../../../../ejaz-v3/node_modules/mammoth/lib/index.js",
+      "../../../../ejaz-v3/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
+      "../../../../ejaz-v3/node_modules/tesseract.js/src/index.js",
+      "../../../../ejaz-v3/node_modules/pdfjs-dist/build/pdf.mjs",
+      "../../../../ejaz-v3/node_modules/cfb/cfb.js",
+      "_chunk-Bk91cRg6.js"
+    ],
+    "css": [
+      "main-CtWdOpAv.css"
+    ]
+  }
+}

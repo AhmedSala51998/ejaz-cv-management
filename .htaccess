@@ -1,0 +1,20 @@
+Options -Indexes
+DirectoryIndex index.php
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^(?:private|frontend-source|tests)(?:/|$) - [F,L]
+RewriteRule (^|/)\.(?!well-known(?:/|$)) - [F,L]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^login/?$ login.php [QSA,L]
+RewriteRule ^records/?$ index.php?view=records [QSA,L]
+RewriteRule ^api/(.+?)/?$ api/index.php?resource=$1 [QSA,L]
+RewriteRule ^samples/([A-Za-z0-9_-]+\.pdf)$ samples.php?file=$1 [QSA,L]
+</IfModule>
+<IfModule mod_mime.c>
+AddType application/javascript .mjs
+AddType application/wasm .wasm
+RemoveEncoding .gz
+AddType application/gzip .gz
+</IfModule>
