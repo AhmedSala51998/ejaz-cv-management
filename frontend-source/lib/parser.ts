@@ -1,36 +1,53 @@
+import {validMeasurement} from './measurements';
 import type {CV} from './fields';
 import {normalizePassport} from './fields';
 import {normalizeNationality,labeledNationality} from './countries';
-const labels:Record<string,string[]>={name:['full name','name in full','name of applicant','applicant name','name'],passport:['passport details number','passport no','passport number','passport #','passport no.'],nationality:['nationality'],job:['post applied for','apply for','occupation','position desired','position applied','function','position'],salary:['monthly salary','salary'],contract:['contract period'],birthDate:['date of birth','birth date','dateof bith'],age:['age'],birthPlace:['place of birth'],religion:['religion'],marital:['civil status','marital status','social status'],children:['number of kids','no. of children','number of children'],height:['height','length','height/weight'],weight:['weight'],education:['educational attainment','academic qualification','education','educational leve','education qualifications'],phone:['mobile no','mobile number','phone number','telephone','tel. number','contact no','contact no.','whats app #'],address:['provincial address','residential address','complete address','address','current address'],issueDate:['date of issuance','date de délivrance','date de delivrance','date of issue','issue date','release date','issue'],expiryDate:['date d’expiration','date expiration','valable jusqu’au','date of expiry','date of exp.','date of expiration','valid until','expiry date','expiry'],issuePlace:['place of iss.','issue place','place of issue'],english:['english'],arabic:['arabic'],relative:['next of kin name','one of the relativ'],relativePhone:['next of kin number'],notes:['remarks','remark','notes']};
-const strip=(s:string)=>s.replace(/[\u0600-\u06ff\u0750-\u077f\uFB50-\uFDFF\uFE70-\uFEFF]/g,'').replace(/[\u0000-\u0008\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+/g,' ').trim();
-const norm=(s:string)=>strip(s).toLowerCase().replace(/[:.#|：-]+$/,'').trim();
+const labels:Record<string,string[]>={name:['full name','name in full','name of applicant','applicant name','name'],passport:['passport details number','passport no','passport number','passport #','passport no.'],nationality:['nationality'],job:['post applied','post applied for','apply for','occupation','position desired','position applied','function','position'],salary:['monthly salary','salary'],contract:['contract period'],birthDate:['date of birth','birth date','dateof bith'],age:['age'],birthPlace:['place of birth'],religion:['religion'],marital:['maritial status','civil status','marital status','social status'],children:['no. of childern','number of kids','no. of children','number of children'],height:['height','length','height/weight'],weight:['weight'],education:['education level','educational attainment','academic qualification','education','educational leve','education qualifications'],phone:['mobile no','mobile number','phone number','telephone','tel. number','contact no','contact no.','whats app #'],address:['living place','provincial address','residential address','complete address','address','current address'],issueDate:['date of issuance','date de délivrance','date de delivrance','date of issue','issue date','release date','issue'],expiryDate:['date d’expiration','date expiration','valable jusqu’au','date of expiry','date of exp.','date of expiration','valid until','expiry date','expiry'],issuePlace:['place of iss.','issue place','place of issue'],english:['english'],arabic:['arabic'],relative:['next of kin name','one of the relativ'],relativePhone:['next of kin number'],notes:['remarks','remark','notes']};
+const strip=(s:string)=>s.replace(/[\u0600-\u06ff\u0750-\u077f\uFB50-\uFDFF\uFE70-\uFEFF]/g,'').replace(/[\u0000-\u0008\u200e\u200f\u202a-\u202e]/g,'').replace(/(^|\s)\/(?=\s|$)/g,'$1').replace(/\s+/g,' ').trim();
+const norm=(s:string)=>strip(s).replace(/^[^a-z]+/i,'').toLowerCase().replace(/[:.#|：/ -]+$/,'').trim();
 const known=new Set([...Object.values(labels).flat(),'duration','country','position','speaking','writing','level','personal information','passport details','language & skills','work experience','name','number','gender','health status','blood type','allergies','next of kin','contact information','previous employment abroad','language known','language & education','language and education','qualifications'].map(norm));
 const valid=(s:string)=>!!s&&!known.has(norm(s))&&!/^[:|.#–-]+$/.test(s);
 function acceptable(key:string,value:string){
  if(!valid(value))return false;
  if(['address','birthPlace','education','religion','issuePlace'].includes(key)&&/^(?:date of|place of|full name|passport|marital|contract period|no\. of)/i.test(value))return false;
+ if(/Date$/.test(key))return validDate(value);
+ if(key==='religion')return /^[A-Za-z\u0600-\u06ff][A-Za-z\u0600-\u06ff ().'’-]+$/.test(value);
+ if(key==='job')return /^[A-Za-z\u0600-\u06ff][A-Za-z\u0600-\u06ff /().'’&-]+$/.test(value);
  if(key==='nationality')return !!normalizeNationality(value)||/BANGLADESH(?:I)?/i.test(value);
+ if(key==='name')return !/^[\s/|:.-]/.test(value)&&/[a-z\u0600-\u06ff]/i.test(value)&&!/^(?:all|full name|name)$/i.test(value);
  if(key==='passport')return /\b[A-Z]{0,3}\d{5,12}[A-Z]?\b/i.test(value);
  if(key==='experience'&&/^(?:خارج البلاد|خارج البلد|previous employment abroad|overseas experience|country|period)$/i.test(value.trim()))return false;
  if(key==='age')return /^\d{2,3}(?:\s*(?:YEARS?(?: OLD)?|YRS?))?$/i.test(value.trim())&&parseInt(value)>=16&&parseInt(value)<=100;
- if(['salary','children','height','weight'].includes(key))return /\d/.test(value);
+ if(key==='height'||key==='weight')return validMeasurement(key,value);
+ if(['salary','children'].includes(key))return /\d/.test(value);
+ if(['english','arabic'].includes(key)&&(value.match(/\b(?:poor|fair|good|fluent|excellent|basic|beginner|average|intermediate|advanced)\b/gi)||[]).length>1)return false;
  if(['english','arabic'].includes(key))return /^(?:yes|no|good|fair|fluent|fullent|poor|excellent|average|basic|beginner|normal|none|little|very good|intermediate|advanced|not at all|some)(?:\s|$)/i.test(value)&&value.length<45;
  if(key==='phone'||key==='relativePhone')return /^[+\d][\d\s().-]*(?:\s*\([A-Z]+\))?$/.test(value.replace(/^[. :–-]+/,''));
  return true;
+}
+const fieldBoundary=new RegExp('\\b(?:'+Object.entries(labels).filter(([key])=>key!=='name').flatMap(([,list])=>list).filter(l=>l.length>4&&!['english','arabic'].includes(l)).sort((a,b)=>b.length-a.length).map(l=>l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?=\\s|[:/#.]|$)','i');
+const startsField=new RegExp('^(?:'+Object.values(labels).flat().sort((a,b)=>b.length-a.length).map(l=>l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?=\\s|[:/]|$)','i');
+function trimNextField(value:string){const clean=strip(value).replace(/^[\s/:|.-]+/,'');const next=clean.search(fieldBoundary);return (next>=0?clean.slice(0,next):clean).replace(/[\s/:|.-]+$/,'').trim();}
+// OCR emits individual words; combine only nearby words on the same baseline.
+export function groupTextCells(items:any[]){
+ const rows:{y:number;cells:any[]}[]=[];
+ for(const c of items.filter(i=>i.str?.trim())){let row=rows.find(r=>Math.abs(r.y-c.transform[5])<Math.max(3,Math.min(5,(c.height||10)*.45)));if(!row){row={y:c.transform[5],cells:[]};rows.push(row);}row.cells.push(c);}
+ return rows.flatMap(r=>{const out:any[]=[];for(const c of r.cells.sort((a,b)=>a.transform[4]-b.transform[4])){const previous=out.at(-1),gap=previous?c.transform[4]-previous.transform[4]-previous.width:Infinity;if(previous&&gap>=-2&&gap<Math.min(previous.height||10,c.height||10)*.8){previous.str+=' '+c.str;previous.width=c.transform[4]+c.width-previous.transform[4];}else out.push({...c,transform:[...c.transform]});}return out;});
 }
 export function textRows(items:any[]){
  const rows:{y:number,cells:any[]}[]=[];for(const c of items.filter(i=>i.str?.trim())){const y=c.transform[5];let row=rows.find(r=>Math.abs(r.y-y)<Math.max(2,Math.min(4,(c.height||10)*.3)));if(!row){row={y,cells:[]};rows.push(row);}row.cells.push(c);}
  return rows.sort((a,b)=>b.y-a.y).map(r=>r.cells.sort((a,b)=>a.transform[4]-b.transform[4]).map(c=>c.str).join('  ')).join('\n');
 }
 export function parseText(text:string):CV{
- const d:CV={};const lines=text.split('\n').map(strip).filter(Boolean);
+ const d:CV={};const rawLines=text.split('\n').flatMap(line=>line.split(new RegExp('\\s{2,}(?='+fieldBoundary.source+')','i'))).filter(line=>strip(line));const lines=rawLines.map(strip);
  for(const[k,ls]of Object.entries(labels)){
-  for(const label of ls){
+  for(const label of [...ls].sort((a,b)=>b.length-a.length)){
    const escaped=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
    const re=new RegExp('^'+escaped+'(?:\\s*[:#：]\\s*[-:]?\\s*|\\s+[-:]?\\s*)(.+)$','i');
    for(let i=0;i<lines.length;i++){
+    if(rawLines[i].includes('/')&&norm(rawLines[i].split('/')[0])===norm(label)){const next=lines[i+1]||'';if(!startsField.test(next)&&!fieldBoundary.test(next)&&!known.has(norm(next))&&!/^(?:experience|knowledge of language|skills|country|period|duration)\b/i.test(next)&&acceptable(k,next)){d[k]=next;break;}}
     if(norm(lines[i])===norm(label)){let next=lines[i+1]||'';if(acceptable(k,next))d[k]=next;}
-    const m=lines[i].match(re);if(m&&acceptable(k,m[1].trim()))d[k]=m[1].trim();
+    const m=lines[i].match(re);if(m){const value=trimNextField(m[1]);if(acceptable(k,value))d[k]=value;}
     if(d[k])break;
    }
    if(d[k])break;
@@ -46,10 +63,10 @@ export function parseText(text:string):CV{
  if(!d.nationality){for(const n of ['FILIPINO','ETHIOPIA','BURUNDIAN','BANGLADESH','KENYAN','UGANDAN','INDIAN','SRI LANKAN'])if(text.toUpperCase().includes(n)){d.nationality=n;break;}}
  const skills:string[]=[];for(const line of lines){if(/^(Cleaning|Cooking|Washing|Ironing|Sewing|Driving|Infant Care|Child Care|Baby Sitting|Children Care|Laundry|Arabic Cooking)\b/i.test(line)&&/YES|☒|✓|✔/i.test(line))skills.push(line);}
  d.skills=skills.join('، ');
- if(d.name)d.name=d.name.replace(/[:|]+$/,'').trim();
+ if(d.name)d.name=d.name.replace(/^[\s/|:.-]+|[\s/|:.-]+$/g,'').trim();
  if(d.nationality){const m=d.nationality.match(/FILIPINO|PHILIPPINES|ETHIOPIA(?:N)?|BURUNDI(?:AN)?|BANGLADESH(?:I)?|KENYA(?:N)?|UGANDA(?:N)?|INDIAN|INDIA|SRI LANKAN|SRI LANKA/i);if(m)d.nationality=m[0];}
- if(!d.job){const m=text.match(/HOUSEMAID|HOUSE MAID|DOMESTIC HELPER/i);if(m)d.job=m[0];}
- if(!d.religion||/height|weight|position/i.test(d.religion)){const m=text.match(/NON[ -]MUSLIM|ROMAN CATHOLIC|MUSLIM/i);if(m)d.religion=m[0];}
+ if(!d.job){const m=text.match(/HOUSE WORKER|HOUSEMAID|HOUSE MAID|DOMESTIC HELPER/i);if(m)d.job=m[0];}
+ if(!d.religion||/height|weight|position/i.test(d.religion)){const m=text.match(/NON[ -]MUSLIM|ROMAN CATHOLIC|MUSLIM|ISLAM/i);if(m)d.religion=m[0];}
  if(d.phone){d.phone=d.phone.replace(/^[. :–-]+/,'').replace(/\s*\([A-Z]+\)$/,'');if(!/^[+\d][\d\s().-]{5,}$/.test(d.phone))delete d.phone;}
  if(d.education&&/^th$/i.test(d.education))delete d.education;
  if(!d.education){const m=text.match(/(?:ACADEMIC QUALIFICATION)[\s\S]{0,45}?(\d+)\s+(Passed)/i);if(m)d.education=m[1]+'th '+m[2];}
@@ -60,13 +77,13 @@ export function parseText(text:string):CV{
  return d;
 }
 export function spatial(items:any[]):CV{
- const out:CV={};const cells=items.filter(i=>i.str?.trim()).map(i=>({text:strip(i.str),x:i.transform[4],y:i.transform[5],w:i.width,h:Math.abs(i.height||10)})).filter(i=>i.text);
+ const out:CV={};const cells=groupTextCells(items).filter(i=>i.str?.trim()).map(i=>({raw:i.str,text:strip(i.str),x:i.transform[4],y:i.transform[5],w:i.width,h:Math.abs(i.height||10)})).filter(i=>i.text);
  const stops=new Set([...known,'number','next of kin','skin color','other languages','washing','cleaning','cooking','children care','sewing','previous employment abroad','period','country','gender','qualifications','name']);
  for(const[k,ls]of Object.entries(labels)){
-  for(const label of ls){const cell=cells.find(c=>norm(c.text)===norm(label));if(!cell)continue;
+  for(const label of [...ls].sort((a,b)=>b.length-a.length)){const cell=cells.find(c=>norm(c.text)===norm(label)||(c.raw.includes('/')&&norm(c.raw.split('/')[0])===norm(label)));if(!cell)continue;
    const row=cells.filter(c=>c!==cell&&Math.abs(c.y-cell.y)<Math.max(3.5,Math.min(cell.h,c.h)*.5)&&c.x>=cell.x+cell.w-2).sort((a,b)=>a.x-b.x);
    const parts:string[]=[];let last=cell.x+cell.w;
-   for(const c of row){if(stops.has(norm(c.text))||c.x-last>(parts.length?35:145))break;if(valid(c.text))parts.push(c.text);last=c.x+c.w;}
+   for(const c of row){if(stops.has(norm(c.text))||fieldBoundary.test(c.text)&&trimNextField(c.text)===''||c.x-last>(parts.length?35:145))break;if(valid(c.text))parts.push(trimNextField(c.text));last=c.x+c.w;}
    if(parts.length&&acceptable(k,parts.join(' '))){out[k]=parts.join(' ');if(k==='notes'){const first=row.find(c=>valid(c.text));const continuation=first&&cells.filter(c=>cell.y-c.y>5&&cell.y-c.y<25&&Math.abs(c.x-first.x)<20&&valid(c.text)).sort((a,b)=>b.y-a.y)[0];if(continuation)out[k]+=' '+continuation.text;}break;}
    const above=cells.filter(c=>c!==cell&&c.y-cell.y>3&&c.y-cell.y<Math.max(24,cell.h*2.2)&&c.x>=cell.x-5&&c.x<cell.x+180&&valid(c.text)).sort((a,b)=>a.y-b.y);
    if(['phone','address','salary','age'].includes(k)){const v=above.find(c=>k==='phone'?/^[+\d][\d\s()-]{6,}$/.test(c.text):k==='age'?/^\d{1,3}$/.test(c.text):k==='salary'?/^\d+(?:SR|SAR|USD|\$)$/i.test(c.text):/^[A-Z][A-Z .,-]{2,}$/i.test(c.text));if(v){out[k]=v.text;break;}}
@@ -98,6 +115,7 @@ export function finalizeData(input:CV,text:string){
  const data={...input},warnings:string[]=[];
  const employment=text.match(/PREVIOUS EMPLOYMENT(?: ABROAD)?([\s\S]*?)(?:WORK EXPERIENCE|Skills\s*&\s*Experience|REMARKS|$)/i);if(employment&&!strip(employment[1]).replace(/\b(?:COUNTRY|PERIOD|POSITION|DURATION)\b/gi,'').replace(/[\s\-—–:|.]+/g,'')&&!data.experience&&!data.experienceCountry)warnings.push('جدول الخبرة الخارجية لا يذكر دولة أو مدة. المهارات العملية موضّحة في حقل المهارات، ولا تُحسب مدة العقد كخبرة.');
  const nationality=normalizeNationality(data.nationality||'')||labeledNationality(text);if(nationality)data.nationality=nationality;else if(data.nationality){warnings.push('راجع الجنسية: القيمة المستخرجة لا تطابق الدول التسع المعتمدة.');data.nationality='';}
+ if(data.name)data.name=data.name.replace(/^[\s/|:.-]+|[\s/|:.-]+$/g,'').trim();
  if(data.nameAr&&/^(?:الكامل|الاسم|الاسم الكامل|الجنسية)$/.test(data.nameAr.trim()))data.nameAr='';
  if(data.marital&&/^(single|married|divorced|widowed)\b/i.test(data.marital))data.marital=data.marital.match(/^(single|married|divorced|widowed)/i)![0].toUpperCase();
  if(data.issueDate&&!validIssueDate(data.issueDate)){warnings.push('تاريخ إصدار الجواز في المستقبل أو غير صالح؛ راجع صورة الجواز.');data.issueDate='';}
@@ -135,8 +153,8 @@ export function passportMRZDates(text:string):CV{
  }return out;
 }
 function readEmployment(text:string):CV{
- const lines=text.split('\n').map(strip).map(s=>s.trim()).filter(Boolean),out:CV={};const start=lines.findIndex(l=>/^(?:EXPERIENCE OUTSIDE THE COUNTRY|EXPERIENCE|OVERSEAS EXPERIENCE|PREVIOUS EMPLOYMENT(?: ABROAD)?)(?:\s*[:：])?$/i.test(l));if(start<0)return out;
- const rows:string[]=[];for(let i=start+1;i<Math.min(lines.length,start+14);i++){if(/^(?:WORKING EXPERIENCE|WORK EXPERIENCE|Skills\s*&\s*Experience|REMARKS|LANGUAGE)/i.test(lines[i]))break;rows.push(lines[i]);}
- for(let i=0;i<rows.length;i++){const c=rows[i].match(/^COUNTRY\s*[:：]?\s+([A-Z][A-Z .-]+)$/i);if(c&&!/PERIOD|POSITION|DURATION/i.test(c[1]))out.experienceCountry=c[1].trim();if(/^COUNTRY$/i.test(rows[i])&&/^[A-Z][A-Z .-]{2,40}$/.test(rows[i+1]||'')&&!/PERIOD|POSITION|DURATION|FIRST TIMER|NIL/.test(rows[i+1]))out.experienceCountry=rows[i+1];const p=rows[i].match(/^(?:PERIOD|DURATION)\s*[:：]?\s+(\d+\s*(?:YEARS?|MONTHS?))/i);if(p)out.experience=p[1];if(/^(?:PERIOD|DURATION)$/i.test(rows[i])&&/^\d+\s*(?:YEARS?|MONTHS?)/i.test(rows[i+1]||''))out.experience=rows[i+1];}
- if(/FIRST TIMER|NO EXPERIENCE|\b(?:NIL|NEW)\b/i.test(rows.join(' ')))out.experience='FIRST TIMER';return out;
+ const lines=text.split('\n').map(strip).map(s=>s.trim()).filter(Boolean),out:CV={};let start=lines.findIndex(l=>/^(?:EXPERIENCE ABROAD|EXPERIENCE OUTSIDE THE COUNTRY|EXPERIENCE|OVERSEAS EXPERIENCE|PREVIOUS EMPLOYMENT(?: ABROAD)?)(?:\s*[:：])?$/i.test(l));if(start<0){const header=lines.findIndex((line,i)=>/\bcountry\b/i.test(line)&&/\b(?:period|duration)\b/i.test(line+' '+(lines[i+1]||'')));if(header<0)return out;start=header-1;}
+ const rows:string[]=[];for(let i=start+1;i<Math.min(lines.length,start+14);i++){if(/^(?:WORKING EXPERIENCE|WORK EXPERIENCE|Skills(?:\s*&\s*Experience)?|REMARKS|LANGUAGE)/i.test(lines[i]))break;rows.push(lines[i]);}
+ for(let i=0;i<rows.length;i++){const c=rows[i].match(/^COUNTRY\s*[:：]?\s+([A-Z][A-Z .-]+)$/i);if(c&&!/PERIOD|POSITION|DURATION/i.test(c[1]))out.experienceCountry=c[1].trim();if(/^COUNTRY$/i.test(rows[i])&&/^[A-Z][A-Z .-]{2,40}$/.test(rows[i+1]||'')&&!/PERIOD|POSITION|DURATION|FIRST TIMER|NIL|NONE/.test(rows[i+1]))out.experienceCountry=rows[i+1];const p=rows[i].match(/^(?:PERIOD|DURATION)\s*[:：]?\s+(\d+\s*(?:YEARS?|MONTHS?))/i);if(p)out.experience=p[1];if(/^(?:PERIOD|DURATION)$/i.test(rows[i])&&/^\d+\s*(?:YEARS?|MONTHS?)/i.test(rows[i+1]||''))out.experience=rows[i+1];}
+ if(/FIRST TIMER|NO EXPERIENCE|\b(?:NIL|NEW|NONE)\b/i.test(rows.join(' ')))out.experience='FIRST TIMER';return out;
 }

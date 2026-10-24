@@ -2,9 +2,9 @@
 return array (
   'db_host' => 'localhost',
   'db_port' => 3306,
-  'db_name' => 'u552468652_ejazcv',
-  'db_user' => 'u552468652_ejazcv',
-  'db_password' => 'Ejazcvmanagement12345',
+  'db_name' => 'ejaz',
+  'db_user' => 'root',
+  'db_password' => '',
   'admin_username' => 'admin',
   'admin_password_hash' => '$2y$10$Cu36sU9Tbi7mmvJiwQVBTOlfKKI.V9GAKe90AV6aZWk7fS9C0bx2m',
   'owner_id' => 'ejaz-admin',

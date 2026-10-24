@@ -1,3 +1,4 @@
+import {readSelectionTables} from './selection-tables';
 import {adaptiveImage} from './document-tools';
 import {pdfDocumentImages} from './profile-extraction';
 import {markedTableSkills} from './skill-checkbox';
@@ -23,7 +24,7 @@ function uncertainFields(values:CV,ws:Word[]){return fields.filter(([key])=>valu
 export async function reviewOCR(canvas:HTMLCanvasElement,worker:any,page?:any,pdfjs?:any,pageNumber=1){
  await worker.reinitialize('eng');await worker.setParameters({tessedit_pageseg_mode:'11',tessedit_char_whitelist:''});
  const full=await worker.recognize(canvas,{}, {text:true,tsv:true});let text=full.data.text;const ws=words(full.data.tsv||'');const cells=ws.filter(w=>w.confidence>=35).map(w=>({str:w.text,transform:[1,0,0,1,w.x,canvas.height-w.y-w.h],width:w.w,height:w.h}));
- const values:CV={...parseText(text),...spatial(cells)};const passes:{method:string;values:CV;uncertain?:string[]}[]=[{method:'OCR إنجليزي — الصورة الأصلية',values:{...values},uncertain:uncertainFields(values,ws)}];const checkedSkills=markedTableSkills(canvas,ws);if(checkedSkills!==undefined)values.skills=checkedSkills;
+ const values:CV={...parseText(text),...spatial(cells)};const passes:{method:string;values:CV;uncertain?:string[]}[]=[{method:'OCR إنجليزي — الصورة الأصلية',values:{...values},uncertain:uncertainFields(values,ws)}];const selections=readSelectionTables(canvas,ws);Object.assign(values,selections.values);passes.push({method:'علامات الاختيار الملونة في الجداول',values:selections.values,uncertain:selections.uncertain});const checkedSkills=selections.values.skills??markedTableSkills(canvas,ws);if(checkedSkills!==undefined)values.skills=checkedSkills;
  // Re-read individual value cells at a larger scale instead of accepting a single clipped digit.
  for(const key of ['age','height','weight']){
   const label=ws.find(w=>w.text.replace(/[^a-z]/gi,'').toLowerCase()===key);let value=key==='age'?numeric(key,values.age||''):'';
