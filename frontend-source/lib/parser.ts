@@ -56,6 +56,7 @@ export function parseText(text:string):CV{
  if(!d.passport){const m=text.match(/(?:PASSPORT DETAILS|PASSPORT INFORMATION)[\s\S]{0,350}?\bNUMBER\s*[:#]?\s*([A-Z]{0,3}\d{5,12}[A-Z]?)\b/i);if(m)d.passport=m[1];}
  if(d.passport){const m=d.passport.match(/\b[A-Z0-9]{6,12}\b/i);d.passport=m?normalizePassport(m[0]):'';}
  const remarks=text.match(/remarks?\s*:?\s*([\s\S]*)/i);if(remarks)d.notes=remarks[1].trim().slice(0,12000);
+ const selectedMarital=markedMarital(text.split('\n').find(l=>/marital status|social status/i.test(l))||'');if(selectedMarital)d.marital=selectedMarital;
  if(d.age)d.age=d.age.match(/\d{1,3}/)?.[0]||'';
  if(d.salary){d.currency=/USD|\$/i.test(d.salary)?'USD':/SAR|SR|ريال/i.test(d.salary)?'SAR':'';d.salary=d.salary.match(/[\d,]+(?:\.\d+)?/)?.[0]?.replace(/,/g,'')||'';}
  const employment=text.match(/PREVIOUS EMPLOYMENT(?: ABROAD)?([\s\S]*?)(?:WORK EXPERIENCE|Skills\s*&\s*Experience|REMARKS|$)/i);
@@ -94,7 +95,7 @@ export function spatial(items:any[]):CV{
  }
  if(!out.name){const names=['first name','middle name','family name'].map(label=>{const c=cells.find(i=>norm(i.text)===label);if(!c)return '';return cells.filter(i=>i.x>c.x+c.w-2&&Math.abs(i.y-c.y)<3).sort((a,b)=>a.x-b.x)[0]?.text||'';});if(names[0])out.name=names.filter(Boolean).join(' ');}
  const skillNames=['Care of the Eldery','Wash & Iron','Cleaning','Cooking','Washing','Ironing','Sewing','Driving','Infant Care','Child Care','Baby Sitting','Children Care','Laundry','Arabic Cooking','Elderly Care','Baby Care','Shopping'];
- out.skills=skillNames.flatMap(name=>{const c=cells.find(i=>norm(i.text).replace(/\s/g,'')===norm(name).replace(/\s/g,''));if(!c)return [];const next=cells.filter(i=>i.x>=c.x+c.w-2&&Math.abs(i.y-c.y)<3.5).sort((a,b)=>a.x-b.x)[0];const belowCheck=cells.filter(i=>i.y<c.y&&c.y-i.y<65&&Math.abs(i.x+i.w/2-c.x-c.w/2)<Math.max(30,c.w/2)).sort((a,b)=>b.y-a.y)[0];const markedBelow=belowCheck&&/^(YES|OK)$/i.test(belowCheck.text);const mark=cells.some(i=>/^[☒✓✔vV]$/.test(i.text)&&i.x<c.x&&c.x-i.x<38&&i.y-c.y>=-3&&i.y-c.y<17);if(next&&/^(SOMETHING|BASIC|LITTLE|FAIR|GOOD|EXCELLENT)$/i.test(next.text))return [name+' ('+next.text.toUpperCase()+')'];return markedBelow||mark||(next&&/^(YES|OK|☒|✓|✔||v)$/i.test(next.text))?[name]:[];}).join('، ');
+ out.skills=skillNames.flatMap(name=>{const c=cells.find(i=>norm(i.text).replace(/\s/g,'')===norm(name).replace(/\s/g,''));if(!c)return [];const next=cells.filter(i=>i.x>=c.x+c.w-2&&Math.abs(i.y-c.y)<3.5).sort((a,b)=>a.x-b.x)[0];const belowCheck=cells.filter(i=>i.y<c.y&&c.y-i.y<65&&Math.abs(i.x+i.w/2-c.x-c.w/2)<Math.max(30,c.w/2)).sort((a,b)=>b.y-a.y)[0];const markedBelow=belowCheck&&/^(YES|OK)$/i.test(belowCheck.text);const mark=items.some(i=>/^[☒✓✔vV]$/.test((i.str||'').trim())&&i.transform[4]<c.x&&c.x-i.transform[4]<38&&i.transform[5]-c.y>=-3&&i.transform[5]-c.y<20);if(next&&/^(SOMETHING|BASIC|LITTLE|FAIR|GOOD|EXCELLENT)$/i.test(next.text))return [name+' ('+next.text.toUpperCase()+')'];return markedBelow||mark||(next&&/^(YES|OK|☒|✓|✔||v)$/i.test(next.text))?[name]:[];}).join('، ');
  const country=cells.find(c=>norm(c.text)==='country'&&cells.some(p=>norm(p.text)==='position'&&Math.abs(p.y-c.y)<4));if(country){const row=cells.filter(c=>country.y-c.y>5&&country.y-c.y<25).sort((a,b)=>a.x-b.x);const position=cells.find(c=>norm(c.text)==='position'&&Math.abs(c.y-country.y)<4),duration=cells.find(c=>norm(c.text)==='duration'&&Math.abs(c.y-country.y)<4);if(position&&duration){const value=row.find(c=>Math.abs(c.x-position.x)<40&&valid(c.text));const period=row.find(c=>Math.abs(c.x-duration.x)<40&&/\d/.test(c.text));const place=row.find(c=>Math.abs(c.x-country.x)<40&&valid(c.text));if(value)out.job=value.text;if(period)out.experience=period.text;if(place)out.experienceCountry=place.text;}}
  for(const c of cells.filter(c=>norm(c.text)==='next of kin')){
   const sub=cells.filter(v=>v.y<c.y&&c.y-v.y<Math.max(25,c.h*3)&&Math.abs(v.x-c.x)<30).sort((a,b)=>b.y-a.y).find(v=>/^(name|number)$/i.test(v.text));
@@ -105,6 +106,17 @@ export function spatial(items:any[]):CV{
  if(out.skills)out.skills=out.skills.replace(/Wash & Iron/g,'Washing، Ironing').replace(/Care of the Eldery/g,'Elderly Care');
  if(out.education==='HIGH SCHOOL'&&cells.some(c=>c.text==='GRADUATE'))out.education='HIGH SCHOOL GRADUATE';
  if(out.marital&&/married/i.test(out.marital)&&/single/i.test(out.marital))out.marital='';
+ const maritalLabel=items.find(c=>/marital status|social status/i.test(c.str||''));
+ if(maritalLabel){
+  const row=items.filter(c=>Math.abs(c.transform[5]-maritalLabel.transform[5])<Math.max(5,c.height||10));
+  const choices=row.filter(c=>/\b(single|married|divorced|widowed)\b/i.test(c.str));
+  const marks=row.filter(c=>/^[☒✓✔]+$/.test((c.str||'').trim()));
+  const selected=marks.map(m=>choices.filter(c=>c.transform[4]+c.width<=m.transform[4]+3&&m.transform[4]-c.transform[4]-c.width<45).sort((a,b)=>b.transform[4]-a.transform[4])[0]).filter(Boolean);
+  if(selected.length===1)out.marital=selected[0].str.match(/single|married|divorced|widowed/i)[0].toUpperCase();
+ }
+ const remarksLabel=cells.find(c=>/^remarks?$/i.test(c.text));
+ if(remarksLabel&&!out.notes){const value=cells.filter(c=>c.y>remarksLabel.y&&c.y-remarksLabel.y<remarksLabel.h*3&&c.x>remarksLabel.x+remarksLabel.w&&valid(c.text)&&!stops.has(norm(c.text))).sort((a,b)=>a.y-b.y)[0];if(value)out.notes=value.text;}
+
  if(out.phone)out.phone=out.phone.replace(/\s*\([A-Z]+\)$/,'');
  if(out.phone&&!/^[+\d][\d\s().-]{5,}$/.test(out.phone))delete out.phone;
  return Object.fromEntries(Object.entries(out).filter(([k,v])=>acceptable(k,v)));
@@ -122,13 +134,14 @@ export function finalizeData(input:CV,text:string){
  for(const key of Object.keys(data))if(!acceptable(key,data[key]))delete data[key];
  if(data.phone&&!/^[+\d][\d\s().-]{5,}$/.test(data.phone))data.phone='';
  const maritalLine=text.split('\n').find(line=>/marital status|social status/i.test(line));
- if(maritalLine&&/single/i.test(maritalLine)&&/married/i.test(maritalLine)){data.marital='';warnings.push('الحالة الاجتماعية تحتوي على أكثر من اختيار؛ راجع علامة الاختيار في الأصل.');}
+ if(maritalLine&&/single/i.test(maritalLine)&&/married/i.test(maritalLine)&&!['SINGLE','MARRIED','DIVORCED','WIDOWED'].includes(input.marital||'')&&!markedMarital(maritalLine)){data.marital='';warnings.push('الحالة الاجتماعية تحتوي على أكثر من اختيار؛ راجع علامة الاختيار في الأصل.');}
  if(data.notes&&/^(?:PLACE|Wednesday|Page \d)/i.test(data.notes))data.notes='';
  if(data.weight)data.weight=data.weight.replace(/\s+/g,'').replace(/kg$/i,'');
  if(data.height)data.height=data.height.replace(/\s+/g,'');
  if(data.salary){data.currency=/USD|\$/i.test(data.salary)?'USD':/SAR|SR/i.test(data.salary)?'SAR':data.currency||'';data.salary=data.salary.match(/[\d,]+(?:\.\d+)?/)?.[0]?.replace(/,/g,'')||'';}
  for(const key of ['birthDate','issueDate','expiryDate'])if(data[key]&&!validDate(data[key])){warnings.push('تاريخ غير واضح في المصدر: '+data[key]);data[key]='';}
  if(data.issueDate&&data.expiryDate&&dateValue(data.expiryDate)<=dateValue(data.issueDate)){warnings.push('تاريخ انتهاء الجواز في المصدر أقدم من تاريخ الإصدار؛ راجعه يدويًا.');data.expiryDate='';}
+ if(!data.age&&data.birthDate&&validDate(data.birthDate)){const birth=new Date(dateValue(data.birthDate)),now=new Date();let age=now.getUTCFullYear()-birth.getUTCFullYear();if(now.getUTCMonth()<birth.getUTCMonth()||(now.getUTCMonth()===birth.getUTCMonth()&&now.getUTCDate()<birth.getUTCDate()))age--;if(age>=16&&age<=100)data.age=String(age);}
  return {data,warnings};
 }
 function dateValue(value:string){
@@ -158,3 +171,5 @@ function readEmployment(text:string):CV{
  for(let i=0;i<rows.length;i++){const c=rows[i].match(/^COUNTRY\s*[:：]?\s+([A-Z][A-Z .-]+)$/i);if(c&&!/PERIOD|POSITION|DURATION/i.test(c[1]))out.experienceCountry=c[1].trim();if(/^COUNTRY$/i.test(rows[i])&&/^[A-Z][A-Z .-]{2,40}$/.test(rows[i+1]||'')&&!/PERIOD|POSITION|DURATION|FIRST TIMER|NIL|NONE/.test(rows[i+1]))out.experienceCountry=rows[i+1];const p=rows[i].match(/^(?:PERIOD|DURATION)\s*[:：]?\s+(\d+\s*(?:YEARS?|MONTHS?))/i);if(p)out.experience=p[1];if(/^(?:PERIOD|DURATION)$/i.test(rows[i])&&/^\d+\s*(?:YEARS?|MONTHS?)/i.test(rows[i+1]||''))out.experience=rows[i+1];}
  if(/FIRST TIMER|NO EXPERIENCE|\b(?:NIL|NEW|NONE)\b/i.test(rows.join(' ')))out.experience='FIRST TIMER';return out;
 }
+
+function markedMarital(line:string){const options=[...line.matchAll(/\b(single|married|divorced|widowed)\b/gi)];const selected=options.filter((m,i)=>/[☒✓✔]/.test(line.slice(m.index!+m[0].length,options[i+1]?.index)));return selected.length===1?selected[0][0].toUpperCase():'';}

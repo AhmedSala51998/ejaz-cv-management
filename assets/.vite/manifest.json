@@ -1,72 +1,72 @@
 {
-  "_chunk-DVA5vYcW.js": {
-    "file": "chunk-DVA5vYcW.js",
+  "../../../../../sites/ejaz-cv/node_modules/.pnpm/@mediapipe+tasks-vision@1.1.0/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs": {
+    "file": "chunk-0mxwi93N.js",
+    "name": "vision_bundle",
+    "src": "../../../../../sites/ejaz-cv/node_modules/.pnpm/@mediapipe+tasks-vision@1.1.0/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "../../../../../sites/ejaz-cv/node_modules/.pnpm/cfb@1.2.2/node_modules/cfb/cfb.js": {
+    "file": "chunk-CUXCqoY-.js",
+    "name": "cfb",
+    "src": "../../../../../sites/ejaz-cv/node_modules/.pnpm/cfb@1.2.2/node_modules/cfb/cfb.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "../../../../../sites/ejaz-cv/node_modules/.pnpm/mammoth@1.13.0/node_modules/mammoth/lib/index.js": {
+    "file": "chunk-B7J02Ey6.js",
+    "name": "lib",
+    "src": "../../../../../sites/ejaz-cv/node_modules/.pnpm/mammoth@1.13.0/node_modules/mammoth/lib/index.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx",
+      "_chunk-_jO6B0ke.js"
+    ]
+  },
+  "../../../../../sites/ejaz-cv/node_modules/.pnpm/pdfjs-dist@6.4.299/node_modules/pdfjs-dist/build/pdf.mjs": {
+    "file": "chunk-DPm9tyxD.js",
+    "name": "pdf",
+    "src": "../../../../../sites/ejaz-cv/node_modules/.pnpm/pdfjs-dist@6.4.299/node_modules/pdfjs-dist/build/pdf.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "../../../../../sites/ejaz-cv/node_modules/.pnpm/tesseract.js@7.0.0/node_modules/tesseract.js/src/index.js": {
+    "file": "chunk-y35ezrdR.js",
+    "name": "src",
+    "src": "../../../../../sites/ejaz-cv/node_modules/.pnpm/tesseract.js@7.0.0/node_modules/tesseract.js/src/index.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "main.tsx"
+    ]
+  },
+  "_chunk-_jO6B0ke.js": {
+    "file": "chunk-_jO6B0ke.js",
     "name": "jszip.min",
     "imports": [
       "main.tsx"
     ]
   },
   "main.tsx": {
-    "file": "app-BPuOnLTs.js",
+    "file": "app-C9u7Zd1u.js",
     "name": "main",
     "src": "main.tsx",
     "isEntry": true,
     "dynamicImports": [
-      "node_modules/mammoth/lib/index.js",
-      "node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
-      "node_modules/tesseract.js/src/index.js",
-      "node_modules/pdfjs-dist/build/pdf.mjs",
-      "node_modules/cfb/cfb.js",
-      "_chunk-DVA5vYcW.js"
+      "../../../../../sites/ejaz-cv/node_modules/.pnpm/mammoth@1.13.0/node_modules/mammoth/lib/index.js",
+      "../../../../../sites/ejaz-cv/node_modules/.pnpm/@mediapipe+tasks-vision@1.1.0/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
+      "../../../../../sites/ejaz-cv/node_modules/.pnpm/tesseract.js@7.0.0/node_modules/tesseract.js/src/index.js",
+      "../../../../../sites/ejaz-cv/node_modules/.pnpm/pdfjs-dist@6.4.299/node_modules/pdfjs-dist/build/pdf.mjs",
+      "../../../../../sites/ejaz-cv/node_modules/.pnpm/cfb@1.2.2/node_modules/cfb/cfb.js",
+      "_chunk-_jO6B0ke.js"
     ],
     "css": [
       "main-CtWdOpAv.css"
-    ]
-  },
-  "node_modules/@mediapipe/tasks-vision/vision_bundle.mjs": {
-    "file": "chunk-CzQzd06b.js",
-    "name": "vision_bundle",
-    "src": "node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
-    "isDynamicEntry": true,
-    "imports": [
-      "main.tsx"
-    ]
-  },
-  "node_modules/cfb/cfb.js": {
-    "file": "chunk-lCk7r5l6.js",
-    "name": "cfb",
-    "src": "node_modules/cfb/cfb.js",
-    "isDynamicEntry": true,
-    "imports": [
-      "main.tsx"
-    ]
-  },
-  "node_modules/mammoth/lib/index.js": {
-    "file": "chunk-Bs6q0Yoi.js",
-    "name": "lib",
-    "src": "node_modules/mammoth/lib/index.js",
-    "isDynamicEntry": true,
-    "imports": [
-      "main.tsx",
-      "_chunk-DVA5vYcW.js"
-    ]
-  },
-  "node_modules/pdfjs-dist/build/pdf.mjs": {
-    "file": "chunk-GzI9AbUj.js",
-    "name": "pdf",
-    "src": "node_modules/pdfjs-dist/build/pdf.mjs",
-    "isDynamicEntry": true,
-    "imports": [
-      "main.tsx"
-    ]
-  },
-  "node_modules/tesseract.js/src/index.js": {
-    "file": "chunk-BQ8wfmYp.js",
-    "name": "src",
-    "src": "node_modules/tesseract.js/src/index.js",
-    "isDynamicEntry": true,
-    "imports": [
-      "main.tsx"
     ]
   }
 }

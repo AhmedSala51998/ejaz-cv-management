@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseText,spatial,finalizeData} from '../lib/parser.ts';
+import {parseText,spatial,finalizeData,textRows} from '../lib/parser.ts';
 const sample=`Full Name / الاسم  SAMPLE APPLICANT NAME
 Age / العمر  21
 Post Applied / الوظيفة  HOUSE WORKER
@@ -32,3 +32,9 @@ test('inline language rating menus are not answers',()=>{const d=parseText('Engl
 
 test('education OCR digits cannot become height or weight',()=>{for(const junk of ['Education Level (5 sie PRIMARY SCHOOL','EducationLevel(5siePRIMARYSCHOOL','CLASS 4','PRIMARY SCHOOL 5','Education Level 158']){const d=finalizeData({height:junk,weight:junk},'').data;assert(!d.height,junk);assert(!d.weight,junk);}const d=parseText('Height\nEducation Level (5 sie PRIMARY SCHOOL');assert(!d.height);});
 test('real measurements retain the formats used in existing CVs',()=>{for(const height of ['158','158 cm','1.58','1.58 M','5,2','5 FIT 2 INCH','154 cm 57 kg'])assert(finalizeData({height},'').data.height,height);for(const weight of ['48','56 KG','56.5','٥٦ كجم'])assert(finalizeData({weight},'').data.weight,weight);});
+test('checked marital choice, raised skill ticks and remarks above their label survive tables',()=>{
+ const cell=(str:string,x:number,y:number,width=35)=>({str,transform:[1,0,0,1,x,y],width,height:11});
+ const items=[cell('Marital Status',230,556,68),cell('Single',320,556,30),cell('Married',407,556,40),cell('',484,556,9),cell('Baby Care',515,270,48),cell('',487,283,9),cell('REMARKS',250,100,50),cell('FIT TO WORK',400,115,70)];
+ const d=spatial(items);assert.equal(d.marital,'MARRIED');assert.equal(d.skills,'Baby Care');assert.equal(d.notes,'FIT TO WORK');assert.equal(finalizeData(d,textRows(items)).data.marital,'MARRIED');
+});
+test('age derives from a valid birth date only when no age was supplied',()=>{const birth='16 JAN 1996';const now=new Date();const expected=now.getUTCFullYear()-1996-(now.getUTCMonth()===0&&now.getUTCDate()<16?1:0);assert.equal(finalizeData({birthDate:birth},'').data.age,String(expected));assert.equal(finalizeData({birthDate:birth,age:'29'},'').data.age,'29');assert(!finalizeData({birthDate:'31/02/1996'},'').data.age);});
