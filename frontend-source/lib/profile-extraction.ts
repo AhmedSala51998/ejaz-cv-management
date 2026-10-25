@@ -1,5 +1,6 @@
+import {photoPageKind,orderPhotos} from './photo-policy';
 import {basePath} from './base';
-export type PhotoCandidate={src:string;label:string;kind?:'profile'|'passport'|'uncertain';faceRatio?:number};
+export type PhotoCandidate={src:string;label:string;kind?:'profile'|'passport'|'uncertain';faceRatio?:number;fullBody?:boolean};
 let detectorPromise:Promise<any>|null=null;
 async function detector(){
  if(!detectorPromise)detectorPromise=(async()=>{
@@ -98,18 +99,17 @@ function fullPhoto(canvas:HTMLCanvasElement,face:Face,images:EmbeddedPhoto[],lab
   out.width=native.width;out.height=native.height;const pixels=out.getContext('2d')!.createImageData(out.width,out.height),channels=native.data.length/(out.width*out.height);
   for(let i=0;i<out.width*out.height;i++){for(let c=0;c<3;c++)pixels.data[i*4+c]=native.data[i*channels+c];pixels.data[i*4+3]=channels===4?native.data[i*4+3]:255;}out.getContext('2d')!.putImageData(pixels,0,0);
  }else{out.width=Math.round(image.w);out.height=Math.round(image.h);out.getContext('2d')!.drawImage(canvas,image.x,image.y,image.w,image.h,0,0,out.width,out.height);}
- return {src:encodePhoto(out),label:label+' • الصورة كاملة',faceRatio:face.w/canvas.width};
+ return {src:encodePhoto(out),label:label+' • الصورة كاملة',faceRatio:face.w/canvas.width,fullBody:image.h/image.w>1.5&&face.h/image.h<.3};
 }
 export async function pdfPortraits(_page:any,_pdfjs:any,canvas:HTMLCanvasElement,pageNumber:number,text:string):Promise<PhotoCandidate[]>{
  let images:EmbeddedPhoto[]=[];try{images=await embeddedPhotos(_page,_pdfjs,canvas);}catch{}
- const cvPage=/personal information|full name|name in full|first name|position desired|curriculum|bio[ -]?data|الاسم الكامل|تفاصيل التطبيق/i.test(text);
- const passportPage=!cvPage&&/P<[A-Z]{3}|passport|republic|جواز|date de naissance|nationality/i.test(text);
+ const kind=photoPageKind(text),cvPage=kind==='profile',passportPage=kind==='passport';
  let detected=await faceBoxes(canvas);
  // Full-body CV photos have tiny faces; scan magnified local regions before falling back to a passport.
  if(cvPage)detected.push(...await faceBoxes(canvas,true));
  const faces=detected.filter(f=>f.w/canvas.width<.4&&f.h/canvas.height<.35);
  faces.sort((a,b)=>cvPage?(a.y-b.y)||b.w*b.h-a.w*a.h:b.w*b.h-a.w*a.h);
- return faces.slice(0,6).map((face,i)=>({...fullPhoto(canvas,face,images,(cvPage?'الصورة الشخصية':passportPage?'صورة الجواز':'صورة للمراجعة')+' • صفحة '+pageNumber+' • '+(i+1)),kind:cvPage?'profile' as const:passportPage?'passport' as const:'uncertain' as const}));
+ return orderPhotos(faces.slice(0,12).map((face,i)=>({...fullPhoto(canvas,face,cvPage?images:[],(cvPage?'الصورة الشخصية':passportPage?'صورة الجواز':'صورة للمراجعة')+' • صفحة '+pageNumber+' • '+(i+1)),kind})));
 }
 export async function documentPortrait(canvas:HTMLCanvasElement,label:string):Promise<PhotoCandidate[]>{return (await portraits(canvas,label)).map(c=>({...c,kind:'uncertain' as const}));}
 export async function wordPhotos(buffer:ArrayBuffer):Promise<string[]>{

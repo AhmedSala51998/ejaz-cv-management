@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 function render_application(string $view): void {
-    $manifest=json_decode(file_get_contents(APP_ROOT.'/assets/.vite/manifest.json'),true);
+    $manifestPath=is_file(APP_ROOT.'/assets/manifest.json')?APP_ROOT.'/assets/manifest.json':APP_ROOT.'/assets/.vite/manifest.json';
+    $manifest=json_decode(file_get_contents($manifestPath),true);
     $entry=$manifest['main.tsx'];$base=base_path();$token=csrf();
     header('Content-Type: text/html; charset=utf-8');header('Cache-Control: private, no-store');header('X-Content-Type-Options: nosniff');
     ?>
