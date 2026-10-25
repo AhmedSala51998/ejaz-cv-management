@@ -6,7 +6,7 @@ export const countries=[
  {value:'INDIAN',label:'الهند',active:true,pattern:/\bINDIA(?:N)?\b|الهند/i},
  {value:'BURUNDIAN',label:'بوروندي',active:true,pattern:/\bBURUNDI(?:AN)?\b|بوروندي|بروندي/i},
  {value:'KENYAN',label:'كينيا',active:true,pattern:/\bKENYA(?:N)?\b|كينيا/i},
- {value:'BANGLADESHI',label:'بنغلاديش',active:true,pattern:/\bBANGLADESH(?:I)?\b|بنغلاديش|بنجلاديش/i},
+ {value:'BANGLADESHI',label:'بنغلاديش',active:true,pattern:/\bBANGLADESH(?:I)?\b|بنغلاديش|بنجلاديش|بنجالديش/i},
  {value:'SOMALI',label:'الصومال',active:true,pattern:/\bSOMALI(?:A|AN)?\b|الصومال/i},
 ] as const;
 export function normalizeNationality(value:string){const clean=value.normalize('NFKC').replace(/[\u064b-\u065f\u0640]/g,'');return countries.find(c=>c.pattern.test(clean))?.value||'';}

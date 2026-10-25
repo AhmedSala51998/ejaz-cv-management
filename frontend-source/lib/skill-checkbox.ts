@@ -8,6 +8,9 @@ const normalize=(s:string)=>s.toLowerCase().replace(/[^a-z]/g,'');const selected
 for(const name of names){const parts=name.toLowerCase().split(' ');let label:W|undefined=words.find(w=>normalize(w.text)===normalize(name));
 for(const first of words.filter(w=>normalize(w.text)===parts[0])){let last=first,good=true;for(const part of parts.slice(1)){const next=words.filter(w=>normalize(w.text)===part&&w.x>=last.x+last.w-3&&w.x-last.x-last.w<first.h*3&&Math.abs(w.y-first.y)<first.h*.7).sort((a,b)=>a.x-b.x)[0];if(!next){good=false;break;}last=next;}if(good){label={...first,w:last.x+last.w-first.x};break;}}
 if(!label)continue;
+// Printed ratings belong to the text parser, not checkbox ink recognition.
+const rating=words.filter(w=>w.x>label!.x+label!.w&&Math.abs(w.y-label!.y)<label!.h).sort((a,b)=>a.x-b.x).slice(0,3).map(w=>w.text).join(' ');
+if(/^(?:YES|NO|OK|GOOD|FAIR|BASIC|LITTLE|EXCELLENT|NOT GOOD)\b/i.test(rating))return undefined;
 const top=Math.max(0,Math.round(label.y-label.h*.35)),bottom=Math.min(height-1,Math.round(label.y+label.h*1.35));
 const vertical=(x:number)=>{let n=0;for(let y=top;y<=bottom;y++)if(dark(x,y,660)||dark(x-1,y,660)||dark(x+1,y,660))n++;return n/(bottom-top+1)>.85;};
 let left=-1,right=-1;for(let x=Math.ceil(label.x+label.w+2);x<Math.min(width,label.x+label.w+width*.16);x++)if(vertical(x)){left=x;break;}if(left<0)continue;
