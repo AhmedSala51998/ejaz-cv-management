@@ -1,13 +1,13 @@
 {
-  "_chunk-B2eNyI0F.js": {
-    "file": "chunk-B2eNyI0F.js",
+  "_chunk-C7v9hWa4.js": {
+    "file": "chunk-C7v9hWa4.js",
     "name": "jszip.min",
     "imports": [
       "main.tsx"
     ]
   },
   "main.tsx": {
-    "file": "app-DFH8H7Pf.js",
+    "file": "app-37uoApQ3.js",
     "name": "main",
     "src": "main.tsx",
     "isEntry": true,
@@ -17,14 +17,14 @@
       "node_modules/tesseract.js/src/index.js",
       "node_modules/pdfjs-dist/build/pdf.mjs",
       "node_modules/cfb/cfb.js",
-      "_chunk-B2eNyI0F.js"
+      "_chunk-C7v9hWa4.js"
     ],
     "css": [
-      "main-CtWdOpAv.css"
+      "main-Z-ZcJYUe.css"
     ]
   },
   "node_modules/@mediapipe/tasks-vision/vision_bundle.mjs": {
-    "file": "chunk-BW57BgPS.js",
+    "file": "chunk-eFU2RKzy.js",
     "name": "vision_bundle",
     "src": "node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
     "isDynamicEntry": true,
@@ -33,7 +33,7 @@
     ]
   },
   "node_modules/cfb/cfb.js": {
-    "file": "chunk-BpwwLUYl.js",
+    "file": "chunk-DEAGxkJc.js",
     "name": "cfb",
     "src": "node_modules/cfb/cfb.js",
     "isDynamicEntry": true,
@@ -42,17 +42,17 @@
     ]
   },
   "node_modules/mammoth/lib/index.js": {
-    "file": "chunk-TXZKPRpE.js",
+    "file": "chunk-BmQZ0_9t.js",
     "name": "lib",
     "src": "node_modules/mammoth/lib/index.js",
     "isDynamicEntry": true,
     "imports": [
       "main.tsx",
-      "_chunk-B2eNyI0F.js"
+      "_chunk-C7v9hWa4.js"
     ]
   },
   "node_modules/pdfjs-dist/build/pdf.mjs": {
-    "file": "chunk-DgP5SbrA.js",
+    "file": "chunk-Dm_PNeAT.js",
     "name": "pdf",
     "src": "node_modules/pdfjs-dist/build/pdf.mjs",
     "isDynamicEntry": true,
@@ -61,7 +61,7 @@
     ]
   },
   "node_modules/tesseract.js/src/index.js": {
-    "file": "chunk-BZ8h2QCt.js",
+    "file": "chunk-A_lqQwQE.js",
     "name": "src",
     "src": "node_modules/tesseract.js/src/index.js",
     "isDynamicEntry": true,

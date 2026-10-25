@@ -804,6 +804,16 @@ export default function RecordsPage() {
                                                 ))}
                                             </div>
                                             {can("export") && (
+                                                <div className="blank-cv-downloads" aria-label="تحميل نموذج سيرة ذاتية فارغ">
+                                                    <a className="secondary" href={basePath + "/templates/ejaz-blank-cv-" + lang + ".docx?v=28"} download={"ejaz-blank-cv-" + lang + ".docx"} title={"تحميل نموذج Word فارغ — " + (lang === "ar" ? "العربية" : "English")}>
+                                                        <Download size={15} /> Word فارغ
+                                                    </a>
+                                                    <a className="secondary" href={basePath + "/templates/ejaz-blank-cv-" + lang + ".pdf?v=28"} download={"ejaz-blank-cv-" + lang + ".pdf"} title={"تحميل نموذج PDF فارغ — " + (lang === "ar" ? "العربية" : "English")}>
+                                                        <Download size={15} /> PDF فارغ
+                                                    </a>
+                                                </div>
+                                            )}
+                                            {can("export") && (
                                                 <button
                                                     className="icon"
                                                     title="طباعة أو حفظ PDF"

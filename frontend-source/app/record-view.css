@@ -290,3 +290,6 @@
         font-size: 8px;
     }
 }
+
+.blank-cv-downloads{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.blank-cv-downloads .secondary{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;font-size:11px;white-space:nowrap;min-height:36px}.blank-cv-downloads .secondary:focus-visible{outline:2px solid #be831e;outline-offset:2px}
+@media(max-width:600px){.blank-cv-downloads{flex:1}.blank-cv-downloads .secondary{flex:1}}

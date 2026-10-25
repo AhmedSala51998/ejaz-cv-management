@@ -41,9 +41,9 @@ function CVPhoto({src,name,label}:{src:string,name:string,label:string}) {
         </div>,document.body)}
     </>;
 }
-export function CVForm({data,photo,lang='ar',onPhotoChange}:{data:CV,photo?:string,lang?:string,onPhotoChange?:(src:string)=>void|Promise<void>}) {
+export function CVForm({data,photo,lang='ar',onPhotoChange,blank=false}:{data:CV,photo?:string,lang?:string,blank?:boolean,onPhotoChange?:(src:string)=>void|Promise<void>}) {
     const ar = lang === 'ar';
-    const display = (key:string) => val(data[key],lang);
+    const display = (key:string) => blank?'\u00a0':val(data[key],lang);
     const section = (number:string,title:string,keys:string[],wide=false) => (
         <section className={'cvd-section cvd-section-'+number+(wide?' cvd-section-wide':'')}>
             <div className="cvd-section-title"><span>{number}</span><h4>{title}</h4></div>
@@ -52,7 +52,7 @@ export function CVForm({data,photo,lang='ar',onPhotoChange}:{data:CV,photo?:stri
                     const field = fields.find(f=>f[0]===key)!;
                     return <div className={['skills','experience','address'].includes(key)?'cvd-field cvd-field-wide':'cvd-field'} key={key}>
                         <dt>{ar?field[1]:field[2]}</dt>
-                        <dd dir="auto">{display(key)}</dd>
+                        <dd dir="auto" data-blank-field={blank?key:undefined}>{display(key)}</dd>
                     </div>;
                 })}
             </dl>
@@ -66,16 +66,16 @@ export function CVForm({data,photo,lang='ar',onPhotoChange}:{data:CV,photo?:stri
         </div>
         <header className="cvd-hero">
             <div className="cvd-portrait">
-                {onPhotoChange?<PhotoBox compact src={photo} onChange={onPhotoChange}/>:photo?<CVPhoto src={photo} name={data.name||'صورة العاملة'} label={ar?'تكبير الصورة':'Enlarge photo'}/>:<div className="cvd-photo-empty">{ar?'الصورة الشخصية':'Profile photo'}</div>}
+                {onPhotoChange?<PhotoBox compact src={photo} onChange={onPhotoChange}/>:photo?<CVPhoto src={photo} name={data.name||'صورة العاملة'} label={ar?'تكبير الصورة':'Enlarge photo'}/>:<div className="cvd-photo-empty" data-blank-field={blank?"photo":undefined}>{ar?'الصورة الشخصية':'Profile photo'}</div>}
             </div>
             <div className="cvd-identity">
-                <span className="cvd-kicker">{ar?'ملف المرشحة':'CANDIDATE PROFILE'}</span>
-                <h3 dir="auto">{ar?(data.nameAr||data.name||'الاسم الكامل'):(data.name||'Full name')}</h3>
-                {ar&&data.nameAr&&data.name&&<p className="cvd-latin-name" dir="ltr">{data.name}</p>}
-                <p className="cvd-job">{display('job')}</p>
+                <span className="cvd-kicker">{blank?(ar?'الاسم الكامل':'FULL NAME'):(ar?'ملف المرشحة':'CANDIDATE PROFILE')}</span>
+                <h3 dir="auto" data-blank-field={blank?"name":undefined}>{blank?"\u00a0":ar?(data.nameAr||data.name||'الاسم الكامل'):(data.name||'Full name')}</h3>
+                {ar&&((data.nameAr&&data.name)||blank)&&<p className="cvd-latin-name" dir="ltr" data-blank-field={blank?"nameEnglish":undefined}>{blank?"\u00a0":data.name}</p>}
+                <p className="cvd-job" data-blank-field={blank?"jobHero":undefined}>{blank?"\u00a0":display('job')}</p>
                 <div className="cvd-highlights">
-                    <div><span>{ar?'الجنسية':'Nationality'}</span><b dir="auto">{display('nationality')}</b></div>
-                    <div><span>{ar?'رقم الجواز':'Passport no.'}</span><b dir="ltr">{display('passport')}</b></div>
+                    <div><span>{ar?'الجنسية':'Nationality'}</span><b dir="auto" data-blank-field={blank?"nationality":undefined}>{display('nationality')}</b></div>
+                    <div><span>{ar?'رقم الجواز':'Passport no.'}</span><b dir="ltr" data-blank-field={blank?"passportHero":undefined}>{display('passport')}</b></div>
                 </div>
             </div>
         </header>
@@ -86,9 +86,9 @@ export function CVForm({data,photo,lang='ar',onPhotoChange}:{data:CV,photo?:stri
             {section('04',ar?'التعليم واللغات':'EDUCATION & LANGUAGES',['education','english','arabic'])}
             {section('05',ar?'الخبرات والمهارات':'EXPERIENCE & SKILLS',['experience','experienceCountry','skills'],true)}
             {section('06',ar?'بيانات التواصل':'CONTACT INFORMATION',['phone','address','relative','relativePhone'],true)}
-            {data.notes&&<section className="cvd-notes"><h4>{ar?'ملاحظات':'REMARKS'}</h4><p dir="auto">{data.notes}</p></section>}
+            {(data.notes||blank)&&<section className="cvd-notes"><h4>{ar?'ملاحظات':'REMARKS'}</h4><p dir="auto" data-blank-field={blank?"notes":undefined}>{blank?"\u00a0":data.notes}</p></section>}
         </div>
-        <footer className="cvd-footer"><strong>EJAZ RECRUITMENT</strong><span>{ar?'نموذج إلكتروني من البيانات المحفوظة':'Generated from saved records'}</span></footer>
+        <footer className="cvd-footer"><strong>EJAZ RECRUITMENT</strong><span>{blank?(ar?'نموذج سيرة ذاتية فارغ':'Blank curriculum vitae form'):(ar?'نموذج إلكتروني من البيانات المحفوظة':'Generated from saved records')}</span></footer>
     </div>;
 }
 export function RegistryModal({close,onDone}:{close:()=>void,onDone:()=>void}){const[text,setText]=useState('');const[busy,setBusy]=useState(false);const[message,setMessage]=useState('');const rows=text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).filter(s=>!/^passport[,;\t]/i.test(s)).map(s=>{const[p,...n]=s.split(/[,;\t]/);return {passport:p.replace(/^"|"$/g,'').trim(),name:n.join(' ').replace(/^"|"$/g,'').trim()};});
