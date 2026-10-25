@@ -1,3 +1,4 @@
+import {readLanguageColumns} from './language-columns';
 import type {CV} from './fields';
 export type LayoutWord={text:string;x:number;y:number;w:number;h:number};
 type Mark={x:number;y:number;w:number;h:number;fill:number};
@@ -16,7 +17,7 @@ function phrase(words:LayoutWord[],name:string){
  for(const first of words.filter(w=>latin(w.text)===parts[0])){let last=first,ok=true;for(const part of parts.slice(1)){const next=words.filter(w=>latin(w.text)===part&&w.x>=last.x+last.w-2&&w.x-last.x-last.w<first.h*3&&Math.abs(w.y-first.y)<first.h*.65).sort((a,b)=>a.x-b.x)[0];if(!next){ok=false;break;}last=next;}if(ok)return {...first,w:last.x+last.w-first.x};}
 }
 export function readSelectionTables(canvas:HTMLCanvasElement,words:LayoutWord[]){
- const values:CV={},uncertain:string[]=[];
+ const columnRead=readLanguageColumns(words);const values:CV={...columnRead.values},uncertain:string[]=[...columnRead.uncertain];
  const grades=words.filter(w=>/^(poor|fair|good|excellent|basic|fluent)$/i.test(w.text.trim())).sort((a,b)=>a.y-b.y||a.x-b.x);
  const headers=words.filter(w=>/eng(?:l)?ish|ar[ae]?bic|ambic/i.test(w.text));
  // Each language has its own row of graded boxes; do not treat the printed options as answers.
