@@ -26,7 +26,10 @@ try {
     }
     $owner=guard_api(!in_array($method,['GET','HEAD'],true));
     if($resource==='auth/logout'&&$method==='POST'){start_session();$_SESSION=[];session_destroy();json_response(['ok'=>true]);}
-    $db=database();actor_info();need_action('view');workspace_routes($db,$owner,$resource,$method);
+    $db=database();actor_info();need_action('view');
+    require_once dirname(__DIR__).'/private/tickets.php';
+    workspace_routes($db,$owner,$resource,$method);
+    tickets_routes($db,$owner,$resource,$method);
     if($resource==='registry'&&$method==='GET') {
         $p=passport((string)($_GET['passport']??''));
         json_response(['count'=>(int)(one($db,'SELECT COUNT(*) AS count FROM registry WHERE owner=?',[$owner])['count']??0),

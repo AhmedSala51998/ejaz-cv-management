@@ -16,7 +16,7 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST') {
         $lock=fopen(__DIR__.'/private/install.lock','c+');if(!$lock||!flock($lock,LOCK_EX))throw new RuntimeException('تعذر كتابة إعدادات التثبيت. راجع صلاحيات مجلد private.');
         if(is_file(__DIR__.'/private/config.php'))throw new RuntimeException('تم التثبيت بالفعل.');
         $config=['db_host'=>$host,'db_port'=>$port,'db_name'=>$defaults['db_name'],'db_user'=>$defaults['db_user'],'db_password'=>(string)($_POST['db_password']??''),'admin_username'=>cut_text($defaults['admin_username'],128),'admin_password_hash'=>password_hash($password,PASSWORD_DEFAULT),'owner_id'=>'ejaz-admin','auth_version'=>bin2hex(random_bytes(32))];
-        $db=database($config);$sql=(file_get_contents(__DIR__.'/private/mysql-schema.sql')."\n".file_get_contents(__DIR__.'/private/workspace-schema.sql'));
+        $db=database($config);$sql=(file_get_contents(__DIR__.'/private/mysql-schema.sql')."\n".file_get_contents(__DIR__.'/private/workspace-schema.sql')."\n".file_get_contents(__DIR__.'/database/tickets-upgrade.sql'));
         foreach(preg_split('/;\s*(?:\r?\n|$)/',$sql)as$statement)if(trim($statement)!=='')$db->exec($statement);
         $temp=tempnam(__DIR__.'/private','cfg_');if(!$temp||file_put_contents($temp,"<?php\nreturn ".var_export($config,true).";\n")===false)throw new RuntimeException('تعذر حفظ config.php.');
         chmod($temp,0600);if(!rename($temp,__DIR__.'/private/config.php')){unlink($temp);throw new RuntimeException('تعذر اعتماد الإعدادات.');}

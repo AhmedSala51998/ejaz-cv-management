@@ -3,6 +3,8 @@ import {createRoot} from 'react-dom/client';
 import UploadPage from './app/page';
 import RecordsPage from './app/records/page';
 import Login from './app/login/page';
+import TicketsPage from './app/tickets';
+import './app/tickets.css';
 import {basePath} from './lib/base';
 import './app/globals.css';
 import './app/enhancements.css';
@@ -24,5 +26,5 @@ window.fetch=async(input,init)=>{
  }
  return nativeFetch(input,init);
 };
-function App(){React.useEffect(()=>{let active=true;const ready=async()=>{await document.fonts.ready;requestAnimationFrame(()=>requestAnimationFrame(()=>{if(active)document.querySelector('#boot-screen')?.remove();}));};if(document.readyState==='complete')void ready();else window.addEventListener('load',ready,{once:true});return()=>{active=false;window.removeEventListener('load',ready);};},[]);const route=(window as any).__EJAZ_VIEW__;const path=route==='login'?'/login':route==='records'?'/records':location.pathname.slice(basePath.length).replace(/\/$/,'');return path==='/login'||path==='/login.php'?<Login/>:path==='/records'?<RecordsPage/>:<UploadPage/>;}
+function App(){React.useEffect(()=>{let active=true;const ready=async()=>{await document.fonts.ready;requestAnimationFrame(()=>requestAnimationFrame(()=>{if(active)document.querySelector('#boot-screen')?.remove();}));};if(document.readyState==='complete')void ready();else window.addEventListener('load',ready,{once:true});return()=>{active=false;window.removeEventListener('load',ready);};},[]);const route=(window as any).__EJAZ_VIEW__;const path=route==='login'?'/login':route==='records'?'/records':route==='tickets'?'/tickets':location.pathname.slice(basePath.length).replace(/\/$/,'');return path==='/login'||path==='/login.php'?<Login/>:path==='/tickets'?<TicketsPage/>:path==='/records'?<RecordsPage/>:<UploadPage/>;}
 createRoot(document.getElementById('root')!).render(<App/>);

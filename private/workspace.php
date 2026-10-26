@@ -416,6 +416,19 @@ function workspace_routes(PDO $db, string $owner, string $resource, string $meth
                 );
             }
         }
+        foreach($tables['tickets']??[] as $ticket){
+            if(!is_array($ticket)||!is_string($ticket['original_data_hex']??null)||strlen($ticket['original_data_hex'])%2||!ctype_xdigit($ticket['original_data_hex']))throw new RuntimeException('BACKUP_TICKET');
+            $bytes=hex2bin($ticket['original_data_hex']);$hash=hash('sha256',$bytes);
+            if(one($db,'SELECT id FROM tickets WHERE owner=? AND file_hash=?',[$owner,$hash])){$skipped++;continue;}
+            check_binary_packet($db,strlen($bytes));
+            $data=json_decode((string)($ticket['data']??''),true);if(!is_array($data))throw new RuntimeException('BACKUP_TICKET_DATA');
+            $clean=clean_ticket($data);$ticket['data']=json_encode($clean,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);
+            $image=@getimagesizefromstring($bytes);$mime=str_starts_with($bytes,'%PDF-')?'application/pdf':($image&&in_array($image['mime'],['image/jpeg','image/png','image/webp'],true)?$image['mime']:'');if(!$mime)throw new RuntimeException('BACKUP_TICKET_FILE');$ticket['mime']=$mime;
+            $columns=['id','owner','booking_reference','ticket_number','passenger_name','passport','airline','departure_date','arrival_date','origin','destination','data','filename','mime','original_data','file_hash','reviewed','created','updated','version'];
+            $ticket['id']=uuid();$ticket['owner']=$owner;$ticket['original_data']=$bytes;$ticket['file_hash']=$hash;
+            foreach($columns as $column)if(!array_key_exists($column,$ticket))throw new RuntimeException('BACKUP_TICKET_COLUMN');
+            query($db,'INSERT INTO tickets (`'.implode('`,`',$columns).'`) VALUES ('.implode(',',array_fill(0,count($columns),'?')).')',array_map(fn($key)=>$ticket[$key],$columns));$saved++;
+        }
         audit_event($db, $owner, "restore", null, "restored=" . $saved . " skipped=" . $skipped);
         $db->commit();
         json_response(["restored" => $saved, "skipped" => $skipped]);
