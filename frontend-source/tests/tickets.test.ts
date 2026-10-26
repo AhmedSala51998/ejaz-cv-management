@@ -1,6 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseTicket,ticketDate} from '../lib/ticket-parser';
+import {displayTicketDate,inputTicketDate,validTicketDate} from '../lib/ticket-dates';
+
+test('8 November stays November in extraction, day-first display and storage',()=>{
+ assert.equal(ticketDate('08 Nov 2026'),'2026-11-08');
+ assert.equal(ticketDate('Nov 08, 2026'),'2026-11-08');
+ assert.equal(displayTicketDate('2026-11-08'),'08-11-2026');
+ assert.equal(inputTicketDate('08-11-2026'),'2026-11-08');
+ assert.equal(inputTicketDate('8/11/2026'),'2026-11-08');
+ assert.equal(inputTicketDate('11-08-2026'),'2026-08-11');
+ assert.equal(validTicketDate('2026-02-31'),false);
+ assert.equal(validTicketDate('2026-11-08'),true);
+});
 
 test('ticket dates validate leap years and reject impossible dates',()=>{
  assert.equal(ticketDate('29 Feb 2024'),'2024-02-29');
