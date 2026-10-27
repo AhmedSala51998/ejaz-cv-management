@@ -28,6 +28,8 @@ try {
     if($resource==='auth/logout'&&$method==='POST'){start_session();$_SESSION=[];session_destroy();json_response(['ok'=>true]);}
     $db=database();actor_info();need_action('view');
     require_once dirname(__DIR__).'/private/tickets.php';
+    require_once dirname(__DIR__).'/private/offices.php';
+    offices_routes($db,$owner,$resource,$method);
     workspace_routes($db,$owner,$resource,$method);
     tickets_routes($db,$owner,$resource,$method);
     if($resource==='registry'&&$method==='GET') {
@@ -49,13 +51,14 @@ try {
         $row['data']=json_decode($row['data'],true)?:new stdClass();$row['version']=(int)$row['version'];json_response(['record'=>$row]);
     }
     if($resource==='records'&&$method==='GET') {
-        $records=query($db,'SELECT r.*,COALESCE(m.status,\'available\') AS workflow_status,COALESCE(m.note,\'\') AS workflow_note,CASE WHEN g.id IS NULL THEN 0 ELSE 1 END AS listed FROM records r LEFT JOIN record_meta m ON m.record_id=r.id AND m.owner=r.owner LEFT JOIN registry g ON r.owner=g.owner AND r.passport=g.passport WHERE r.owner=? ORDER BY r.updated DESC',[$owner])->fetchAll();
+        $records=query($db,'SELECT r.*,COALESCE(ol.office_id,\'\') AS office_id,COALESCE(ro.name,\'\') AS office_name,COALESCE(m.status,\'available\') AS workflow_status,COALESCE(m.note,\'\') AS workflow_note,CASE WHEN g.id IS NULL THEN 0 ELSE 1 END AS listed FROM records r LEFT JOIN office_records ol ON ol.record_id=r.id AND ol.owner=r.owner LEFT JOIN recruitment_offices ro ON ro.id=ol.office_id AND ro.owner=r.owner LEFT JOIN record_meta m ON m.record_id=r.id AND m.owner=r.owner LEFT JOIN registry g ON r.owner=g.owner AND r.passport=g.passport WHERE r.owner=? ORDER BY r.updated DESC',[$owner])->fetchAll();
         foreach($records as&$row){$decoded=json_decode($row['data'],true)?:[];unset($decoded['extractedText'],$decoded['_evidence']);$row['data']=$decoded?:new stdClass();$row['version']=(int)$row['version'];$row['listed']=(int)$row['listed'];}unset($row);json_response(['records'=>$records]);
     }
     if($resource==='records'&&$method==='POST') {
         need_action('create');
         $input=json_decode((string)($_POST['data']??''),true);if(!is_array($input))json_response(['error'=>'بيانات السيرة غير صالحة.'],400);$clean=clean_cv($input);
         if(!$clean['name']||!preg_match('/^[A-Z0-9]{5,20}$/',$clean['passport']))json_response(['error'=>'راجع الاسم ورقم الجواز أولًا.'],400);
+        $officeId=trim((string)($_POST['officeId']??''));if($officeId!==''){$office=office_get($db,$owner,$officeId);if(!$office||!(int)$office['active'])json_response(['error'=>'اختر مكتبًا نشطًا من مكاتب مساحة عملك.'],400);}
         $file=uploaded('file',25*1024*1024);if(!$file)json_response(['error'=>'ارفع الملف الأصلي PDF أو Word أو صورة.'],400);
         $name=cut_text(basename($file['name']),1000);$ext=strtolower(pathinfo($name,PATHINFO_EXTENSION));$bytes=file_get_contents($file['tmp_name']);
         $imageInfo=@getimagesizefromstring($bytes);$imageValid=in_array($ext,['jpg','jpeg','png','webp'],true)&&$imageInfo&&in_array($imageInfo['mime'],['image/jpeg','image/png','image/webp'],true);
@@ -68,11 +71,14 @@ try {
         $old=one($db,'SELECT * FROM records WHERE owner=? AND passport=? FOR UPDATE',[$owner,$clean['passport']]);
         if(!$listed&&($_POST['confirmArchive']??'')!=='yes'){$db->rollBack();json_response(['error'=>'أكّد حفظ السيرة في الأرشيف لعدم وجود الجواز في قائمة مساند المحلية.','requiresArchiveConfirmation'=>true],409);}
         if($old)need_action('edit');
+        if($old&&$officeId!==''){$oldLink=one($db,'SELECT office_id FROM office_records WHERE record_id=? AND owner=?',[$old['id'],$owner]);if($oldLink&&$oldLink['office_id']!==$officeId){$db->rollBack();json_response(['error'=>'السيرة الموجودة تابعة لمكتب آخر؛ غيّر المكتب المختار أو انقلها من إدارة المكاتب أولًا.'],409);}}
+
         if($old&&($_POST['confirmUpdate']??'')!=='yes'){$db->rollBack();json_response(['error'=>'يوجد سجل بهذا الجواز؛ أكّد تحديثه أولًا.','conflict'=>true],409);}
         query($db,'INSERT INTO uploaded_files(file_key,mime,data,created) VALUES(?,?,?,?)',[$source,$mime,$bytes,$now]);
         $photo=$picture?store_photo($db,$owner,$picture,$now):($old['photo']??null);$id=$old['id']??uuid();$data=json_encode($clean,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);
         if($old){history_row($db,$old,$now);query($db,'UPDATE records SET name=?,nationality=?,data=?,source=?,filename=?,photo=?,updated=?,version=version+1 WHERE id=? AND owner=?',[$clean['name'],$clean['nationality'],$data,$source,$name,$photo,$now,$id,$owner]);}
         else query($db,'INSERT INTO records(id,owner,passport,name,nationality,data,source,filename,photo,created,updated,version) VALUES(?,?,?,?,?,?,?,?,?,?,?,1)',[$id,$owner,$clean['passport'],$clean['name'],$clean['nationality'],$data,$source,$name,$photo,$now,$now]);
+        if($officeId!=='')query($db,'INSERT INTO office_records(record_id,owner,office_id,created) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE record_id=VALUES(record_id)',[$id,$owner,$officeId,$now]);
         audit_event($db,$owner,$old?'replace':'create',$id,$name);$db->commit();json_response(['id'=>$id,'listed'=>$listed,'updated'=>(bool)$old,'message'=>$listed?'تم حفظ البيانات مقابل الجواز المطابق.':'تم الحفظ في الأرشيف: غير مدرجة في مساند حسب قائمتك المحلية.']);
     }
     if($resource==='records'&&$method==='PUT') {

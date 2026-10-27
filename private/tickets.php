@@ -4,13 +4,13 @@ declare(strict_types=1);
 function clean_ticket(array $input): array
 {
     $clean=[];
-    foreach (['bookingReference'=>100,'ticketNumber'=>100,'airline'=>200,'agency'=>300,'issueDate'=>10,'bookingDate'=>10,'status'=>100,'currency'=>3,'baseFare'=>30,'taxes'=>30,'total'=>30,'paymentMethod'=>100,'contactEmail'=>200,'contactPhone'=>100,'notes'=>8000,'extractedText'=>200000,'extractionMethod'=>100] as $key=>$limit) {
+    foreach (['officeId'=>36,'officeName'=>200,'sourceCountry'=>100,'bookingReference'=>100,'ticketNumber'=>100,'airline'=>200,'agency'=>300,'issueDate'=>10,'bookingDate'=>10,'status'=>100,'currency'=>3,'baseFare'=>30,'taxes'=>30,'total'=>30,'paymentMethod'=>100,'contactEmail'=>200,'contactPhone'=>100,'notes'=>8000,'extractedText'=>200000,'extractionMethod'=>100] as $key=>$limit) {
         $clean[$key]=cut_text(is_scalar($input[$key]??'')?(string)($input[$key]??''):'',$limit);
     }
     foreach (['issueDate','bookingDate'] as $key) ticket_date($clean[$key]);
     foreach (['baseFare','taxes','total'] as $key) if($clean[$key]!==''&&!preg_match('/^\d{1,12}(?:\.\d{1,2})?$/',$clean[$key]))json_response(['error'=>'راجع المبالغ المالية؛ استخدم أرقامًا موجبة وبحد أقصى منزلتين عشريتين.'],400);
     if($clean['currency']!==''&&!preg_match('/^[A-Z]{3}$/',$clean['currency']))json_response(['error'=>'رمز العملة يجب أن يكون 3 حروف إنجليزية كبيرة.'],400);
-    foreach (['passengers'=>['checkedBaggage'=>300,'cabinBaggage'=>300,'personalItem'=>300,'frequentFlyer'=>100,'name'=>200,'passport'=>40,'ticketNumber'=>100,'nationality'=>100,'birthDate'=>10,'type'=>50,'baggage'=>200,'seat'=>100,'meal'=>200],'segments'=>['checkedBaggage'=>300,'cabinBaggage'=>300,'personalItem'=>300,'meal'=>200,'stops'=>100,'checkInDeadline'=>100,'fareFamily'=>100,'notValidBefore'=>100,'notValidAfter'=>100,'airline'=>200,'flightNumber'=>30,'from'=>200,'to'=>200,'departureDate'=>10,'departureTime'=>5,'arrivalDate'=>10,'arrivalTime'=>5,'departureTerminal'=>100,'arrivalTerminal'=>100,'cabin'=>100,'bookingClass'=>50,'baggage'=>200,'seat'=>100,'status'=>100,'duration'=>100,'aircraft'=>100,'airlineReference'=>100,'fareBasis'=>100,'notes'=>3000],'additional'=>['label'=>150,'value'=>3000]] as $group=>$fields) {
+    foreach (['passengers'=>['cvRecordId'=>36,'identitySource'=>300,'checkedBaggage'=>300,'cabinBaggage'=>300,'personalItem'=>300,'frequentFlyer'=>100,'name'=>200,'passport'=>40,'ticketNumber'=>100,'nationality'=>100,'birthDate'=>10,'type'=>50,'baggage'=>200,'seat'=>100,'meal'=>200],'segments'=>['checkedBaggage'=>300,'cabinBaggage'=>300,'personalItem'=>300,'meal'=>200,'stops'=>100,'checkInDeadline'=>100,'fareFamily'=>100,'notValidBefore'=>100,'notValidAfter'=>100,'airline'=>200,'flightNumber'=>30,'from'=>200,'to'=>200,'departureDate'=>10,'departureTime'=>5,'arrivalDate'=>10,'arrivalTime'=>5,'departureTerminal'=>100,'arrivalTerminal'=>100,'cabin'=>100,'bookingClass'=>50,'baggage'=>200,'seat'=>100,'status'=>100,'duration'=>100,'aircraft'=>100,'airlineReference'=>100,'fareBasis'=>100,'notes'=>3000],'additional'=>['label'=>150,'value'=>3000]] as $group=>$fields) {
         $rows=$input[$group]??[];
         if(!is_array($rows)||count($rows)>($group==='segments'?30:($group==='additional'?500:100)))json_response(['error'=>'عدد المسافرين أو الرحلات أو البيانات الإضافية غير صالح.'],400);
         $clean[$group]=[];
@@ -61,16 +61,25 @@ function tickets_routes(PDO $db,string $owner,string $resource,string $method): 
         $id=(string)($_GET['id']??'');
         if($id!==''){$row=one($db,'SELECT id,owner,booking_reference,ticket_number,passenger_name,passport,airline,departure_date,arrival_date,origin,destination,data,filename,mime,file_hash,reviewed,created,updated,version FROM tickets WHERE id=? AND owner=?',[$id,$owner]);if(!$row)json_response(['error'=>'التذكرة غير موجودة.'],404);json_response(['ticket'=>ticket_public($db,$owner,$row)]);}
         $q=cut_text((string)($_GET['q']??''),200);$page=max(1,(int)($_GET['page']??1));$limit=25;$where='owner=?';$params=[$owner];
+        $officeFilter=(string)($_GET['officeId']??'');if($officeFilter!==''){$where.=" AND JSON_UNQUOTE(JSON_EXTRACT(data,'$.officeId'))=?";$params[]=$officeFilter;}
         if($q!==''){$where.=' AND (passenger_name LIKE ? OR passport LIKE ? OR booking_reference LIKE ? OR ticket_number LIKE ? OR data LIKE ?)';for($i=0;$i<5;$i++)$params[]='%'.$q.'%';}
         $count=(int)one($db,'SELECT COUNT(*) AS n FROM tickets WHERE '.$where,$params)['n'];
-        $list=query($db,'SELECT id,booking_reference,ticket_number,passenger_name,passport,airline,departure_date,arrival_date,origin,destination,filename,updated,version FROM tickets WHERE '.$where.' ORDER BY updated DESC,id DESC LIMIT 25 OFFSET '.(($page-1)*$limit),$params)->fetchAll();json_response(['tickets'=>$list,'total'=>$count,'page'=>$page,'pages'=>max(1,(int)ceil($count/$limit))]);
+        $list=query($db,'SELECT id,booking_reference,ticket_number,passenger_name,passport,airline,departure_date,arrival_date,origin,destination,JSON_UNQUOTE(JSON_EXTRACT(data,\'$.officeName\')) AS office_name,filename,updated,version FROM tickets WHERE '.$where.' ORDER BY updated DESC,id DESC LIMIT 25 OFFSET '.(($page-1)*$limit),$params)->fetchAll();json_response(['tickets'=>$list,'total'=>$count,'page'=>$page,'pages'=>max(1,(int)ceil($count/$limit))]);
     }
     if($method==='POST'||$method==='PUT'){
         need_action($method==='POST'?'create':'edit');
         $body=$method==='POST'?json_decode((string)($_POST['data']??''),true):read_json();
         if(!is_array($body))json_response(['error'=>'بيانات التذكرة غير صالحة.'],400);
         if(($method==='POST'?($_POST['reviewed']??''):($body['reviewed']??''))!=='yes')json_response(['error'=>'راجع بيانات التذكرة وأكّد صحتها قبل الحفظ.'],400);
-        $ticket_input=$method==='PUT'?($body['data']??[]):$body;if(!is_array($ticket_input))json_response(['error'=>'بيانات التذكرة غير صالحة.'],400);$clean=clean_ticket($ticket_input);$encoded=json_encode($clean,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);$now=now_iso();
+        $ticket_input=$method==='PUT'?($body['data']??[]):$body;if(!is_array($ticket_input))json_response(['error'=>'بيانات التذكرة غير صالحة.'],400);$clean=clean_ticket($ticket_input);$officeId=$clean['officeId'];
+        $clean=ticket_office_context($db,$owner,$clean,$method==='POST',$method==='POST');
+        foreach($clean['passengers'] as &$person){
+            if(!$person['cvRecordId'])continue;
+            $cv=one($db,'SELECT r.id,r.name,r.passport,r.nationality FROM records r JOIN office_records l ON l.record_id=r.id AND l.owner=r.owner WHERE r.id=? AND r.owner=? AND l.office_id=?',[$person['cvRecordId'],$owner,$officeId]);
+            if(!$cv||office_country($cv['nationality'])!==office_country($clean['sourceCountry'])||$cv['passport']!==$person['passport'])json_response(['error'=>'ارتباط السيرة لا يطابق المكتب والبلد والجواز؛ أعد اختيار السيرة.'],400);
+            $person['identitySource']='CV: '.$cv['id'];
+        }unset($person);
+        $encoded=json_encode($clean,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);$now=now_iso();
         $people=$clean['passengers'];$first=$clean['segments'][0];$last=$clean['segments'][count($clean['segments'])-1];
         $summary=[$clean['bookingReference'],$clean['ticketNumber']?:$people[0]['ticketNumber'],implode(' / ',array_column($people,'name')),$people[0]['passport'],$clean['airline'],$first['departureDate']?:null,$last['arrivalDate']?:null,$first['from'],$last['to'],$encoded,$now];
         if($method==='POST'){

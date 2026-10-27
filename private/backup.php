@@ -7,7 +7,7 @@ function export_backup(PDO $db,string $owner): void {
     header('Content-Disposition: attachment; filename="ejaz-database.'.($json?'json':'sql').'"');
     $db->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,false);$db->exec('START TRANSACTION WITH CONSISTENT SNAPSHOT');
     if($json)echo '{"schema":'.json_encode($schema).',"exported":'.json_encode(now_iso()).',"tables":{';else echo $schema."\nSTART TRANSACTION;\n";
-    $tables=['registry','records','history','photos','uploaded_files','record_meta','activity_events'];
+    $tables=['registry','records','history','photos','uploaded_files','record_meta','activity_events','recruitment_offices','office_records'];
     if($hasTickets)$tables[]='tickets';
     foreach($tables as$i=>$table){
         $select=in_array($table,['photos','uploaded_files'],true)?($table==='photos'?'SELECT id,owner,mime,HEX(data) AS data_hex,created FROM photos WHERE owner=?':'SELECT file_key,mime,HEX(data) AS data_hex,created FROM uploaded_files WHERE file_key LIKE ?'):'SELECT * FROM `'.$table.'` WHERE owner=?';

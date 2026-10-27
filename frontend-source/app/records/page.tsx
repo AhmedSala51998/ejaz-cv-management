@@ -29,6 +29,8 @@ import SourceInspector, { inspectField } from "../source-inspector";
 import WorkspaceSettings, { api } from "../workspace-settings";
 import { exportCVZip, download } from "@/lib/cv-export";
 type RecordItem = {
+    office_id?: string;
+    office_name?: string;
     id: string;
     name: string;
     passport: string;
@@ -139,11 +141,13 @@ export default function RecordsPage() {
             expiry: "",
             review: "",
         });
+    const [offices,setOffices]=useState<any[]>([]),[officeFilter,setOfficeFilter]=useState(''),[bulkOffice,setBulkOffice]=useState('');
     const can = (p: string) => permissions.includes(p);
     async function load() {
         setLoading(true);
         try {
-            const [r, m] = await Promise.all([api("records"), api("workspace/me")]);
+            const [r, m, o] = await Promise.all([api("records"), api("workspace/me"),api("offices")]);
+            setOffices(o.offices);
             setRecords(r.records);
             setPermissions(m.permissions);
             setSelected((ids) => ids.filter((id) => r.records.some((r: any) => r.id === id)));
@@ -154,10 +158,18 @@ export default function RecordsPage() {
             setLoading(false);
         }
     }
+    async function assignOffice(){
+        const ids=records.filter(r=>selected.includes(r.id)&&!r.office_id).map(r=>r.id);
+        if(!ids.length||!bulkOffice||busy)return;
+        setBusy(true);setError('');try{
+            const j=await api('offices/assign-bulk',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({officeId:bulkOffice,recordIds:ids})});
+            await load();setSelected([]);setProgress('تم تعيين المكتب لعدد '+j.assigned+' سيرة.'+(j.skipped?' تم تجاوز '+j.skipped+' سيرة مرتبطة بالفعل.':''));
+        }catch(e){setError((e as Error).message);}finally{setBusy(false);}
+    }
     useEffect(() => {
         load();
     }, []);
-    useEffect(() => setPage(1), [search, status, country, filter]);
+    useEffect(() => setPage(1), [search, status, country, filter, officeFilter]);
     const filtered = records.filter((r) => {
         const d = r.data,
             age = Number(d.age),
@@ -167,6 +179,7 @@ export default function RecordsPage() {
                 .join(" ")
                 .toLowerCase();
         return (
+            (!officeFilter||(officeFilter==='unassigned'?!r.office_id:r.office_id===officeFilter)) &&
             (status === "all" || (status === "listed" ? !!r.listed : !r.listed)) &&
             (!country || (normalizeNationality(r.nationality) || r.nationality) === country) &&
             term.includes(search.toLowerCase()) &&
@@ -581,7 +594,10 @@ export default function RecordsPage() {
                         )}
                     </div>
                 </section>
-                <div className="selection-toolbar">
+                <div className="cv-office-bulk">
+                    <label>تصفية حسب المكتب<select value={officeFilter} disabled={busy} onChange={e=>{setOfficeFilter(e.target.value);setSelected([]);}}><option value="">كل السير الذاتية</option><option value="unassigned">السير بدون مكتب فقط</option>{offices.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select></label>
+                    {can('edit')&&<><button className="secondary" disabled={busy||!filtered.some(r=>!r.office_id)} onClick={()=>setSelected(filtered.filter(r=>!r.office_id).map(r=>r.id))}>تحديد كل السير بدون مكتب في النتائج ({filtered.filter(r=>!r.office_id).length})</button><label>تعيين المكتب للمحدد بدون مكتب<select disabled={busy} value={bulkOffice} onChange={e=>setBulkOffice(e.target.value)}><option value="">اختر المكتب</option>{offices.filter(o=>Number(o.active)).map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select></label><button className="primary" disabled={busy||!bulkOffice||!chosen.some(r=>!r.office_id)} onClick={()=>void assignOffice()}>تعيين المكتب ({chosen.filter(r=>!r.office_id).length})</button></>}
+                </div><div className="selection-toolbar">
                     <label>
                         <input
                             type="checkbox"
@@ -691,7 +707,7 @@ export default function RecordsPage() {
                                         >
                                             {states[r.workflow_status || "available"]}
                                         </span>
-                                        <Badge listed={!!r.listed} />
+                                        <span className="workflow-badge">{r.office_name||'بدون مكتب'}</span><Badge listed={!!r.listed} />
                                         {days !== null && days <= 90 && (
                                             <span className="expiry-alert">
                                                 {days < 0

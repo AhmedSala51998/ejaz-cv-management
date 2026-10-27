@@ -11,6 +11,10 @@ function workspace_schema(PDO $db): void
             $db->exec($sql);
         }
     }
+    if(!one($db,"SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='recruitment_offices' AND COLUMN_NAME='country'")){
+        try{$db->exec("ALTER TABLE recruitment_offices ADD COLUMN country VARCHAR(100) NOT NULL DEFAULT ''");}
+        catch(PDOException $e){if((int)($e->errorInfo[1]??0)!==1060)throw $e;}
+    }
     $done = true;
 }
 function actor_info(): array
@@ -416,13 +420,34 @@ function workspace_routes(PDO $db, string $owner, string $resource, string $meth
                 );
             }
         }
+        $officeIds=[];
+        foreach($tables['recruitment_offices']??[] as $office){
+            if(!is_array($office)||!is_string($office['id']??null)||!is_string($office['name']??null))throw new RuntimeException('BACKUP_OFFICE');
+            $name=cut_text($office['name'],200);if(!$name)throw new RuntimeException('BACKUP_OFFICE_NAME');
+            $existing=one($db,'SELECT id FROM recruitment_offices WHERE owner=? AND name=?',[$owner,$name]);
+            $newId=$existing['id']??uuid();$officeIds[$office['id']]=$newId;
+            if(!$existing)query($db,'INSERT INTO recruitment_offices(id,owner,name,country,active,version,created,updated) VALUES(?,?,?,?,?,1,?,?)',[$newId,$owner,$name,cut_text((string)($office['country']??''),100),!empty($office['active'])?1:0,now_iso(),now_iso()]);
+        }
+        $restoredRecords=$ids;
+        foreach($tables['records'] as $record){
+            if(!isset($restoredRecords[$record['id']])){$existing=one($db,'SELECT id FROM records WHERE owner=? AND passport=?',[$owner,$record['passport']]);if($existing)$restoredRecords[$record['id']]=$existing['id'];}
+        }
+        foreach($tables['office_records']??[] as $link){
+            if(!is_array($link))throw new RuntimeException('BACKUP_OFFICE_LINK');
+            $recordId=$restoredRecords[$link['record_id']??'']??null;$officeId=$officeIds[$link['office_id']??'']??null;
+            if($recordId&&$officeId&&!one($db,'SELECT record_id FROM office_records WHERE record_id=? AND owner=?',[$recordId,$owner]))query($db,'INSERT INTO office_records(record_id,owner,office_id,created) VALUES(?,?,?,?)',[$recordId,$owner,$officeId,now_iso()]);
+        }
         foreach($tables['tickets']??[] as $ticket){
             if(!is_array($ticket)||!is_string($ticket['original_data_hex']??null)||strlen($ticket['original_data_hex'])%2||!ctype_xdigit($ticket['original_data_hex']))throw new RuntimeException('BACKUP_TICKET');
             $bytes=hex2bin($ticket['original_data_hex']);$hash=hash('sha256',$bytes);
             if(one($db,'SELECT id FROM tickets WHERE owner=? AND file_hash=?',[$owner,$hash])){$skipped++;continue;}
             check_binary_packet($db,strlen($bytes));
             $data=json_decode((string)($ticket['data']??''),true);if(!is_array($data))throw new RuntimeException('BACKUP_TICKET_DATA');
-            $clean=clean_ticket($data);$ticket['data']=json_encode($clean,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);
+            $clean=clean_ticket($data);
+            $oldOffice=$clean['officeId'];$clean['officeId']=$officeIds[$oldOffice]??'';
+            $newOffice=$clean['officeId']?office_get($db,$owner,$clean['officeId']):null;$clean['officeName']=$newOffice['name']??'';
+            foreach($clean['passengers'] as &$person){$person['cvRecordId']=$restoredRecords[$person['cvRecordId']]??'';$person['identitySource']=$person['cvRecordId']?'CV: '.$person['cvRecordId']:'';}unset($person);
+            $ticket['data']=json_encode($clean,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);
             $image=@getimagesizefromstring($bytes);$mime=str_starts_with($bytes,'%PDF-')?'application/pdf':($image&&in_array($image['mime'],['image/jpeg','image/png','image/webp'],true)?$image['mime']:'');if(!$mime)throw new RuntimeException('BACKUP_TICKET_FILE');$ticket['mime']=$mime;
             $columns=['id','owner','booking_reference','ticket_number','passenger_name','passport','airline','departure_date','arrival_date','origin','destination','data','filename','mime','original_data','file_hash','reviewed','created','updated','version'];
             $ticket['id']=uuid();$ticket['owner']=$owner;$ticket['original_data']=$bytes;$ticket['file_hash']=$hash;

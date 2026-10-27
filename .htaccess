@@ -9,6 +9,7 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 RewriteRule ^login/?$ login.php [QSA,L]
 RewriteRule ^records/?$ index.php?view=records [QSA,L]
+RewriteRule ^offices/?$ index.php?view=offices [QSA,L]
 RewriteRule ^tickets/?$ index.php?view=tickets [QSA,L]
 RewriteRule ^api/(.+?)/?$ api/index.php?resource=$1 [QSA,L]
 RewriteRule ^samples/([A-Za-z0-9_-]+\.pdf)$ samples.php?file=$1 [QSA,L]

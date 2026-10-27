@@ -13,3 +13,14 @@ CREATE TABLE IF NOT EXISTS activity_events (
  action VARCHAR(64) NOT NULL, record_id VARCHAR(36), detail TEXT NOT NULL, created VARCHAR(32) NOT NULL,
  KEY event_owner(owner,created)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS recruitment_offices (
+ id VARCHAR(36) PRIMARY KEY, owner VARCHAR(191) NOT NULL, name VARCHAR(200) NOT NULL, country VARCHAR(100) NOT NULL DEFAULT '',
+ active TINYINT NOT NULL DEFAULT 1, version INT NOT NULL DEFAULT 1,
+ created VARCHAR(32) NOT NULL, updated VARCHAR(32) NOT NULL,
+ UNIQUE KEY offices_owner_name(owner,name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS office_records (
+ record_id VARCHAR(36) PRIMARY KEY, owner VARCHAR(191) NOT NULL, office_id VARCHAR(36) NOT NULL,
+ created VARCHAR(32) NOT NULL, KEY office_records_owner(owner,office_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

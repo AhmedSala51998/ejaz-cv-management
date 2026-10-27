@@ -13,7 +13,7 @@ export function ticketLayout(items:any[],pageWidth:number):string {
 export async function extractTicket(file:File,progress:(s:string)=>void){
  if(file.size>25*1024*1024)throw Error('الحد الأقصى للملف 25 ميجابايت.');
  const ext=file.name.split('.').pop()?.toLowerCase();if(!['pdf','png','jpg','jpeg','webp'].includes(ext||''))throw Error('ارفع تذكرة PDF أو صورة JPG / PNG / WebP.');
- let text='',ocr=false,worker:any=null,pdf:any=null,pdfTask:any=null;let pages=1;const warnings:string[]=[];
+ let text='',supplement='',ocr=false,worker:any=null,pdf:any=null,pdfTask:any=null;let pages=1;const warnings:string[]=[];
  try{
   if(ext==='pdf'){
    const pdfjs=await import('pdfjs-dist');pdfjs.GlobalWorkerOptions.workerSrc=basePath+'/vendor/pdf/pdf.worker.min.mjs';
@@ -24,7 +24,7 @@ export async function extractTicket(file:File,progress:(s:string)=>void){
     const compact=pageText.replace(/\s/g,'');const incomplete=compact.length<350&&!/\d{1,2}\s*[:∶]\s*\d{2}/.test(pageText);
     if(compact.length<70||incomplete){
      ocr=true;progress(`OCR — صفحة ${n} من ${pages}`);const v=page.getViewport({scale:Math.min(3,2200/Math.max(page.view[2],page.view[3]))});const canvas=document.createElement('canvas');canvas.width=v.width;canvas.height=v.height;
-     await page.render({canvas,canvasContext:canvas.getContext('2d')!,viewport:v}).promise;worker=worker||await ticketWorker();const result=await readTicketImage(canvas,worker);pageText=result.text;if(result.confidence<65)warnings.push(`جودة OCR في الصفحة ${n} منخفضة؛ راجعها بعناية.`);canvas.width=canvas.height=1;
+     await page.render({canvas,canvasContext:canvas.getContext('2d')!,viewport:v}).promise;worker=worker||await ticketWorker();const result=await readTicketImage(canvas,worker);if(pageText.trim()&&pageText.trim()!==result.text.trim())supplement+='\n--- PDF original text / page '+n+' ---\n'+pageText+'\n';pageText=result.text||pageText;if(!pageText.trim())warnings.push('لم يُقرأ نص الصفحة '+n+'؛ راجع الأصل يدويًا.');if(result.confidence<65)warnings.push(`جودة OCR في الصفحة ${n} منخفضة؛ راجعها بعناية.`);canvas.width=canvas.height=1;
     }
     text+='\n'+pageText+'\n';page.cleanup();
    }
@@ -34,8 +34,8 @@ export async function extractTicket(file:File,progress:(s:string)=>void){
   }
  }finally{if(worker)await worker.terminate();if(pdfTask)await pdfTask.destroy();}
  if(!text.trim())throw Error('لم يُستخرج نص مقروء. يمكنك إدخال البيانات يدويًا مع حفظ الملف الأصلي.');
- if(text.length>200000)throw Error('النص أطول من الحد المسموح؛ قسّم الملف حتى لا تُفقد أي صفحات من النص المستخرج.');
- const data=parseTicket(text);data.extractionMethod=ocr?'PDF / Image + OCR':'PDF text';
+ if(text.length+supplement.length>200000)throw Error('النص أطول من الحد المسموح؛ قسّم الملف حتى لا تُفقد أي صفحات من النص المستخرج.');
+ const data=parseTicket(text);data.extractedText=text+supplement;data.extractionMethod=ocr?'PDF / Image + OCR':'PDF text';
  if(!data.passengers.length)warnings.push('لم يُقرأ اسم مسافر موثوق؛ أدخله يدويًا.');
  if(/^\s*(?:MS|MR|MRS)\s+(?:\d|CHICKEN|$)/im.test(text))warnings.push('يوجد صف مسافر بلا اسم واضح في الأصل؛ راجع عدد المسافرين ولا تعتمد الدفعة قبل التأكد.');
  if(!data.segments.length)warnings.push('لم تُقرأ مراحل الرحلة؛ أضفها من الأصل.');
