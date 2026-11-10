@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
 function bank_transfer_download(PDO $db, string $owner, string $id): never
 {
     $row = one($db, 'SELECT source_name,source_mime,source_file FROM bank_transfers WHERE owner=? AND id=?', [$owner,$id]);
