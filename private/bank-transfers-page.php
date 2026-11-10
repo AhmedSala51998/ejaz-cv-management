@@ -1,11 +1,7 @@
 <?php
 declare(strict_types=1);
-error_reporting(E_ALL);
-ini_set('display_errors', '0');
-ini_set('log_errors', '1');
 need_action('view');
 $db = database();
-workspace_schema($db);
 $owner = (string)(configuration()['owner_id'] ?? 'ejaz-admin');
 $id = is_string($_GET['id'] ?? null) ? $_GET['id'] : '';
 $fields = [
