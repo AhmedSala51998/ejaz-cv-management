@@ -17,6 +17,9 @@ body .photo-frame>img,body .worker-photo{object-fit:contain;object-position:cent
 .field-grid .field-needs-review input,.field-grid .field-needs-review select,.field-grid .field-needs-review textarea{border:2px solid #c77713;background:#fffcf3}.field-review-alert{display:flex;flex-direction:column;gap:6px;background:#fff6df;color:#754309;border:1px solid #edc781;border-radius:9px;padding:10px;font-size:12px;font-weight:400;line-height:1.8;overflow-wrap:anywhere}.field-review-alert b{font-weight:700}.field-review-alert .text-button{align-self:flex-start;white-space:normal;text-align:start;min-height:32px}.field-reviewed{color:#137343;font-size:12px}@media print{.field-review-alert,.field-reviewed{display:none}}
 </style>
 <?php foreach($entry['css']??[]as$css):?><link rel="stylesheet" href="<?=h(url('assets/'.$css))?>"><?php endforeach;?>
+<?php if ($view === "records"): ?>
+<style media="print">#root .cv-office-bulk{display:none!important}</style>
+<?php endif; ?>
 <script>window.__EJAZ_BASE__=<?=json_encode($base,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;window.__EJAZ_VIEW__=<?=json_encode($view)?>;</script>
 </head><body><div id="boot-screen" class="startup-loader" role="status"><div class="loader-brand">إيجاز<span>مركز السير الذاتية</span></div><div class="loader-orbit"></div><strong>بنجهّز مساحة عملك</strong><p>جارٍ تحميل الموقع والأدوات…</p><div class="loader-track"><i></i></div><noscript>يرجى تفعيل JavaScript لاستخدام أدوات استخراج السير.</noscript></div><div id="root"></div><script>
 (() => {
