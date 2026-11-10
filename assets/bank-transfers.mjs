@@ -1,6 +1,6 @@
 import {parseBankTransfer, matchingOffice, beneficiaryOfficeName} from './bank-transfer-parser.mjs?v=2';
 
-document.querySelector('#print-transfer')?.addEventListener('click', () => window.print());
+if (document.querySelector('.transfer-receipt')) import('./bank-transfer-print.mjs');
 document.querySelector('#transfer-logout')?.addEventListener('click', async event => {
     const button = event.currentTarget;
     button.disabled = true;

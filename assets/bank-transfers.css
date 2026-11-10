@@ -40,3 +40,31 @@
 .transfer-original iframe{width:100%;height:min(62vh,580px);border:1px solid var(--line,#e9ebe6);margin-top:8px}
 .transfer-original img,.transfer-original canvas{display:block;max-width:100%;max-height:60vh;margin:auto;object-fit:contain}
 #transfer-preview a{display:inline-block;color:#925508;margin-top:8px}
+
+#transfers .transfer-receipt{max-width:920px;margin-inline:auto;padding:28px;color:#17302d;background:#fff}
+.receipt-brands{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:18px}
+.receipt-brands img{width:auto;max-width:38%;height:62px;object-fit:contain}
+.receipt-banner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:18px 22px;border-radius:10px;background:#154a42;color:#fff}
+.receipt-banner small,.receipt-banner strong{display:block}
+.receipt-banner small{font-size:12px}
+#transfers .receipt-banner h2{color:inherit;margin:5px 0 0;font-size:24px}
+.receipt-banner strong{font-size:24px;font-variant-numeric:tabular-nums}
+.receipt-group{margin-top:18px;border:1px solid #dce6e0;border-radius:8px;overflow:hidden;break-inside:avoid}
+.receipt-group h3{margin:0;padding:8px 14px;font-size:15px;background:#eff5f1}
+.receipt-group dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
+#transfers .receipt-group dl>div{padding:9px 14px;border-bottom:1px solid #e9eeeb}
+.receipt-group dt{font-size:12px;color:#52655f}
+.receipt-group dd{font-weight:600;font-variant-numeric:tabular-nums}
+.receipt-footer{margin-top:16px;padding-top:10px;border-top:1px solid #dce6e0;color:#52655f;font-size:12px}
+.receipt-controls{max-width:920px;margin-inline:auto}
+#receipt-logo-picker{max-width:min(92vw,800px);max-height:90vh;border:1px solid #dce6e0;border-radius:10px}
+#receipt-logo-picker::backdrop{background:#142c28a0}
+#receipt-logo-preview{position:relative;width:fit-content;margin:10px auto}
+#receipt-logo-preview canvas{display:block;width:auto;height:auto;max-width:100%;max-height:62vh;touch-action:none;cursor:crosshair}
+#receipt-logo-preview div{position:absolute;border:2px solid #b06c12;background:#f1a63c26;pointer-events:none}
+@media print{
+    @page{size:A4;margin:13mm}
+    .transfer-detail-page #transfers .transfer-heading,.transfer-detail-page .receipt-controls,#receipt-logo-picker{display:none!important}
+    .transfer-detail-page #transfers .transfer-receipt{width:100%;max-width:none;padding:0;margin:0;box-shadow:none;border:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .receipt-brands,.receipt-banner{break-inside:avoid}
+}

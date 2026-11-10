@@ -43,8 +43,8 @@ header('X-Content-Type-Options: nosniff');
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="<?=h(csrf())?>"><title>إيجاز | حوالات المكاتب الخارجية</title>
 <?php foreach ($manifest['main.tsx']['css'] ?? [] as $css): ?><link rel="stylesheet" href="<?=h(url('assets/'.$css))?>"><?php endforeach; ?>
-<link rel="stylesheet" href="<?=h(url('assets/bank-transfers.css?v=4'))?>"></head>
-<body class="bank-transfer-page">
+<link rel="stylesheet" href="<?=h(url('assets/bank-transfers.css?v=5'))?>"></head>
+<body class="bank-transfer-page<?= $record ? ' transfer-detail-page' : '' ?>">
 <header class="header">
     <a class="brand" href="<?=h(url())?>"><img src="<?=h(url('logo.png'))?>" alt="شركة إيجاز للاستقدام"><span class="brand-divider"></span><span>مركز السير الذاتية<small>إدارة ملفات العمالة</small></span></a>
     <nav aria-label="روابط الموقع">
@@ -61,11 +61,50 @@ header('X-Content-Type-Options: nosniff');
 <div class="transfer-heading"><div><span class="eyebrow">إيجاز · مكاتب الاستقدام</span><h1><?= $record ? 'نموذج حوالة بنكية' : 'حوالات المكاتب الخارجية' ?></h1></div>
 <?php if ($record): ?><a class="secondary" href="<?=h(url('bank-transfers'))?>">العودة إلى سجل الحوالات</a><?php endif; ?></div>
 <?php if ($record): ?>
-<section class="paper"><h2><?=h($record['office_name'] ?? 'مكتب غير متاح')?></h2><dl class="grid">
-<?php foreach ($fields as $key=>$label): ?><div><dt><?=h($label)?></dt><dd><bdi><?=h((string)($record[$key] ?? '—'))?></bdi></dd></div><?php endforeach; ?>
-</dl><p>المرفق الأصلي · <bdi><?=h($record['source_name'])?></bdi></p>
-<div class="actions"><button type="button" id="print-transfer">طباعة / حفظ PDF</button>
-<a class="button" href="<?=h(url('api/bank-transfers/download?id='.rawurlencode($id)))?>">تحميل الملف الأصلي</a></div></section>
+<?php
+$sourceUrl = url('api/bank-transfers/download?id='.rawurlencode($id));
+$groups = [
+    'بيانات التحويل' => ['reference','transfer_date','value_date'],
+    'بيانات المستفيد' => ['beneficiary','bank','beneficiary_account'],
+    'ملخص المبالغ' => ['debit_sar','charges'],
+];
+?>
+<section class="paper transfer-receipt" data-reference="<?=h($record['reference'])?>" data-source-name="<?=h($record['source_name'])?>">
+    <div class="receipt-brands">
+        <img src="<?=h(url('logo.png'))?>" alt="شركة إيجاز للاستقدام">
+        <img id="receipt-bank-logo" alt="شعار البنك المُرسل من مرفق الحوالة" hidden>
+    </div>
+    <div class="receipt-banner">
+        <div><small lang="en" dir="ltr">INTERNATIONAL BANK TRANSFER</small><h2>تفاصيل الحوالة الدولية</h2></div>
+        <div><small>المبلغ المحوّل</small><strong><bdi><?=h($record['amount'].' '.$record['currency'])?></bdi></strong></div>
+    </div>
+    <?php foreach ($groups as $heading => $keys): ?>
+    <section class="receipt-group">
+        <h3><?=h($heading)?></h3>
+        <dl>
+        <?php foreach ($keys as $key): ?>
+            <div><dt><?=h($fields[$key])?></dt><dd><bdi><?=h((string)($record[$key] ?? '—'))?></bdi></dd></div>
+        <?php endforeach; ?>
+        <?php if ($keys[0] === 'beneficiary'): ?>
+            <div><dt>المكتب الخارجي</dt><dd><bdi><?=h($record['office_name'] ?? '—')?></bdi></dd></div>
+        <?php endif; ?>
+        </dl>
+    </section>
+    <?php endforeach; ?>
+    <footer class="receipt-footer">نسخة عرض من سجل الحوالات لدى إيجاز</footer>
+</section>
+<div class="actions receipt-controls">
+    <button type="button" id="print-transfer">طباعة / حفظ PDF</button>
+    <button type="button" id="select-bank-logo">تحديد شعار البنك من المرفق</button>
+    <a class="button" id="receipt-original" href="<?=h($sourceUrl)?>">تحميل الملف الأصلي</a>
+</div>
+<p id="receipt-logo-status" class="receipt-controls transfer-notice" role="status" hidden></p>
+<dialog id="receipt-logo-picker">
+    <form method="dialog"><button>إغلاق</button></form>
+    <p>اسحب إطارًا حول شعار البنك فقط، ثم اختر اعتماد الشعار.</p>
+    <div id="receipt-logo-preview"><canvas aria-label="الصفحة الأولى من الحوالة"></canvas><div hidden></div></div>
+    <button type="button" id="apply-bank-logo" disabled>اعتماد الشعار</button>
+</dialog>
 <?php elseif ($id !== ''): ?><section class="paper">الحوالة غير موجودة.</section>
 <?php else: ?>
 <?php if (allow_action('create')): ?>
@@ -112,4 +151,4 @@ $optional = in_array($key,['value_date','debit_sar','charges'],true); ?>
 <?php if (count($rows)>25): ?><a href="?office=<?=rawurlencode($officeFilter)?>&amp;page=<?=$page+1?>">التالي</a><?php endif; ?></nav>
 </section>
 <?php endif; ?>
-</main><script type="module" src="<?=h(url('assets/bank-transfers.mjs?v=4'))?>"></script></body></html>
+</main><script type="module" src="<?=h(url('assets/bank-transfers.mjs?v=5'))?>"></script></body></html>
