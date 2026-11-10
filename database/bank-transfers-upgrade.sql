@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS bank_transfers (
+  id VARCHAR(36) PRIMARY KEY,
+  owner VARCHAR(191) NOT NULL,
+  office_id VARCHAR(36) NOT NULL,
+  reference VARCHAR(80) NOT NULL,
+  transfer_date DATE NOT NULL,
+  value_date DATE NULL,
+  beneficiary VARCHAR(200) NOT NULL,
+  bank VARCHAR(200) NOT NULL,
+  beneficiary_account VARCHAR(64) NOT NULL,
+  currency CHAR(3) NOT NULL,
+  amount DECIMAL(15,2) NOT NULL,
+  debit_sar DECIMAL(15,2) NULL,
+  charges DECIMAL(15,2) NULL,
+  source_name VARCHAR(255) NOT NULL,
+  source_mime VARCHAR(40) NOT NULL,
+  source_sha CHAR(64) NOT NULL,
+  source_file LONGBLOB NOT NULL,
+  created VARCHAR(32) NOT NULL,
+  UNIQUE KEY bank_transfer_reference (owner, reference),
+  UNIQUE KEY bank_transfer_file (owner, source_sha),
+  KEY bank_transfer_office (owner, office_id, transfer_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -29,6 +29,12 @@ try {
     $db=database();actor_info();need_action('view');
     require_once dirname(__DIR__).'/private/tickets.php';
     require_once dirname(__DIR__).'/private/offices.php';
+    if (in_array($resource,['bank-transfers','bank-transfers/download'],true)) {
+        require_once dirname(__DIR__).'/private/bank-transfers.php';
+        if ($resource==='bank-transfers' && $method==='POST') bank_transfer_save($db,$owner);
+        if ($resource==='bank-transfers/download' && $method==='GET') bank_transfer_download($db,$owner,(string)($_GET['id']??''));
+        json_response(['error'=>'طريقة غير مدعومة.'],405);
+    }
     offices_routes($db,$owner,$resource,$method);
     workspace_routes($db,$owner,$resource,$method);
     tickets_routes($db,$owner,$resource,$method);

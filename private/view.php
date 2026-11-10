@@ -18,5 +18,27 @@ body .photo-frame>img,body .worker-photo{object-fit:contain;object-position:cent
 </style>
 <?php foreach($entry['css']??[]as$css):?><link rel="stylesheet" href="<?=h(url('assets/'.$css))?>"><?php endforeach;?>
 <script>window.__EJAZ_BASE__=<?=json_encode($base,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;window.__EJAZ_VIEW__=<?=json_encode($view)?>;</script>
-</head><body><div id="boot-screen" class="startup-loader" role="status"><div class="loader-brand">إيجاز<span>مركز السير الذاتية</span></div><div class="loader-orbit"></div><strong>بنجهّز مساحة عملك</strong><p>جارٍ تحميل الموقع والأدوات…</p><div class="loader-track"><i></i></div><noscript>يرجى تفعيل JavaScript لاستخدام أدوات استخراج السير.</noscript></div><div id="root"></div><script type="module" src="<?=h(url('assets/'.$entry['file']))?>"></script></body></html>
+</head><body><div id="boot-screen" class="startup-loader" role="status"><div class="loader-brand">إيجاز<span>مركز السير الذاتية</span></div><div class="loader-orbit"></div><strong>بنجهّز مساحة عملك</strong><p>جارٍ تحميل الموقع والأدوات…</p><div class="loader-track"><i></i></div><noscript>يرجى تفعيل JavaScript لاستخدام أدوات استخراج السير.</noscript></div><div id="root"></div><script>
+(() => {
+    const root = document.getElementById('root');
+    const path = <?=json_encode(url('bank-transfers.php'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>;
+    const addTransferLink = () => {
+        const nav = root.querySelector('.header nav');
+        if (!nav || [...nav.querySelectorAll('a')].some(link => new URL(link.href).pathname === path)) return;
+        const tickets = [...nav.querySelectorAll('a')].find(link => /\/tickets\/?$/.test(new URL(link.href).pathname));
+        if (!tickets) return;
+        const link = document.createElement('a');
+        link.href = path;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        for (const [key,value] of Object.entries({width:'18',height:'18',viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'2','aria-hidden':'true'})) svg.setAttribute(key,value);
+        const icon = document.createElementNS(svg.namespaceURI,'path');
+        icon.setAttribute('d','M3 10h18L12 3 3 10zm2 4v4m5-4v4m4-4v4m5-4v4M3 22h18');
+        svg.append(icon);
+        link.append(svg,document.createTextNode('الحوالات البنكية'));
+        tickets.after(link);
+    };
+    new MutationObserver(addTransferLink).observe(root,{childList:true,subtree:true});
+    addTransferLink();
+})();
+</script><script type="module" src="<?=h(url('assets/'.$entry['file']))?>"></script></body></html>
 <?php }
