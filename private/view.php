@@ -21,7 +21,7 @@ body .photo-frame>img,body .worker-photo{object-fit:contain;object-position:cent
 </head><body><div id="boot-screen" class="startup-loader" role="status"><div class="loader-brand">إيجاز<span>مركز السير الذاتية</span></div><div class="loader-orbit"></div><strong>بنجهّز مساحة عملك</strong><p>جارٍ تحميل الموقع والأدوات…</p><div class="loader-track"><i></i></div><noscript>يرجى تفعيل JavaScript لاستخدام أدوات استخراج السير.</noscript></div><div id="root"></div><script>
 (() => {
     const root = document.getElementById('root');
-    const path = <?=json_encode(url('bank-transfers.php'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>;
+    const path = <?=json_encode(url('bank-transfers'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>;
     const addTransferLink = () => {
         const nav = root.querySelector('.header nav');
         if (!nav || [...nav.querySelectorAll('a')].some(link => new URL(link.href).pathname === path)) return;
