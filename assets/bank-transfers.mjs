@@ -22,10 +22,15 @@ if (form) {
     const input = document.querySelector('#transfer-files');
     const status = document.querySelector('#transfer-status');
     const save = document.querySelector('#save-transfer');
-    const skip = document.querySelector('#skip-transfer');
+    const choose = document.querySelector('#choose-transfer-files');
+    const drop = document.querySelector('#transfer-drop');
+    const queueView = document.querySelector('#transfer-queue');
+    const reviewPanel = document.querySelector('#transfer-review');
+    const original = document.querySelector('#transfer-original');
+    const originalPreview = document.querySelector('#transfer-preview');
     const preview = document.querySelector('#transfer-text');
     const fields = [...form.querySelectorAll('[name]')];
-    let queue = [], index = 0, saved = 0, busy = false;
+    let queue = [], active = null, busy = false, previewUrl = null;
 
     const office = form.elements.office_id;
     const country = form.elements.office_country;
@@ -39,7 +44,8 @@ if (form) {
 
     function setBusy(value) {
         busy = value;
-        input.disabled = save.disabled = skip.disabled = value;
+        input.disabled = save.disabled = choose.disabled = value;
+        renderQueue();
     }
 
     async function recognize(source) {
@@ -102,76 +108,206 @@ if (form) {
         }
     }
 
-    async function review() {
-        const file = queue[index];
-        if (!file) {
-            if (saved) window.location.assign(page.dataset.page);
-            else form.reset();
+    const countries = {ETHIOPIA:'ETHIOPIAN',UGANDA:'UGANDAN',PHILIPPINES:'FILIPINO','SRI LANKA':'SRI LANKAN',
+        INDIA:'INDIAN',BURUNDI:'BURUNDIAN',KENYA:'KENYAN',BANGLADESH:'BANGLADESHI',SOMALIA:'SOMALI'};
+
+    function message(text, error = false) {
+        status.textContent = text;
+        status.hidden = !text;
+        status.classList.toggle('transfer-error', error);
+    }
+
+    function snapshot() {
+        if (active) active.values = Object.fromEntries(fields.map(field => [field.name, field.value]));
+    }
+
+    function renderQueue() {
+        queueView.hidden = queue.length === 0;
+        queueView.replaceChildren();
+        for (const item of queue) {
+            const row = document.createElement('div');
+            row.className = 'transfer-file';
+            row.classList.toggle('is-current', item === active);
+            const fileLabel = document.createElement('div');
+            const name = document.createElement('bdi');
+            name.textContent = item.file.name;
+            const state = document.createElement('small');
+            state.textContent = item.savedId ? 'تم الحفظ' : item.error ? 'تحتاج مراجعة' : item.values ? 'جاهز للمراجعة' : 'بانتظار القراءة';
+            fileLabel.append(name, state);
+            const select = document.createElement(item.savedId ? 'a' : 'button');
+            select.className = 'secondary';
+            select.textContent = item.savedId ? 'عرض الحوالة' : 'معاينة وقراءة';
+            if (item.savedId) select.href = page.dataset.page + '?id=' + encodeURIComponent(item.savedId);
+            else {
+                select.type = 'button';
+                select.disabled = busy;
+                select.addEventListener('click', () => openFile(item));
+            }
+            row.append(fileLabel, select);
+            if (!item.savedId) {
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'secondary transfer-remove';
+                remove.textContent = 'إزالة';
+                remove.setAttribute('aria-label', 'إزالة ' + item.file.name);
+                remove.disabled = busy;
+                remove.addEventListener('click', () => {
+                    queue = queue.filter(entry => entry !== item);
+                    if (active === item) {
+                        active = null;
+                        openFile(queue.find(entry => !entry.savedId) || null);
+                    } else renderQueue();
+                });
+                row.append(remove);
+            }
+            queueView.append(row);
+        }
+    }
+
+    async function showOriginal() {
+        originalPreview.replaceChildren();
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = null;
+        if (!active || !original.open) return;
+        const file = active.file;
+        const pdf = /\.pdf$/i.test(file.name);
+        previewUrl = URL.createObjectURL(file);
+        if (!pdf) {
+            const image = document.createElement('img');
+            image.alt = 'معاينة أصل الحوالة';
+            image.src = previewUrl;
+            originalPreview.append(image);
             return;
         }
-        const position = `ملف ${index+1} من ${queue.length} · ${file.name}`;
-        setBusy(true);
-        fields.forEach(field => { field.value = ''; });
-        preview.textContent = '';
-        updateOfficeFields();
-        skip.hidden = queue.length < 2;
-        status.textContent = 'جارٍ القراءة · ' + position;
+        const url = previewUrl;
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'فتح ملف PDF في تبويب جديد';
+        originalPreview.append(link);
+        let task;
         try {
-            const text = await read(file);
-            const data = parseBankTransfer(text);
-            preview.textContent = text;
+            const pdfModule = await import(page.dataset.pdf);
+            if (previewUrl !== url) return;
+            pdfModule.GlobalWorkerOptions.workerSrc = page.dataset.base + '/assets/bank-transfer-pdf-worker.mjs';
+            task = pdfModule.getDocument({data:await file.arrayBuffer(),isEvalSupported:false});
+            const documentPdf = await task.promise;
+            const first = await documentPdf.getPage(1);
+            const viewport = first.getViewport({scale:Math.min(2,1400/Math.max(first.view[2]-first.view[0],first.view[3]-first.view[1]))});
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await first.render({canvas,canvasContext:canvas.getContext('2d'),viewport}).promise;
+            if (previewUrl === url) originalPreview.append(canvas);
+        } catch {
+            if (previewUrl === url) link.textContent = 'تعذرت المعاينة المدمجة. افتح ملف PDF في تبويب جديد.';
+        } finally {
+            if (task) await task.destroy();
+        }
+    }
+
+    original.addEventListener('toggle', showOriginal);
+
+    async function openFile(item) {
+        if (busy) return;
+        snapshot();
+        active = item;
+        reviewPanel.hidden = original.hidden = !item;
+        original.open = false;
+        showOriginal();
+        renderQueue();
+        if (!item) { message(''); return; }
+        fields.forEach(field => { field.value = item.values?.[field.name] || ''; });
+        preview.textContent = item.text || '';
+        const newOffice = [...office.options].find(option => option.value === '__new__');
+        if (newOffice) newOffice.textContent = 'إضافة المستفيد كمكتب جديد';
+        updateOfficeFields();
+        if (item.values) {
+            message(item.error || 'راجع بيانات الحوالة قبل الحفظ.', Boolean(item.error));
+            return;
+        }
+        setBusy(true);
+        message('جارٍ قراءة الحوالة · ' + item.file.name);
+        try {
+            item.text = await read(item.file);
+            preview.textContent = item.text;
+            const data = parseBankTransfer(item.text);
             const match = matchingOffice(data.beneficiary,[...office.options].filter(option => option.value && option.value !== '__new__')
                 .map(option => ({id:option.value,name:option.textContent})));
-            const newOffice = [...office.options].find(option => option.value === '__new__');
-            if (newOffice) newOffice.textContent = data.beneficiary
-                ? 'مكتب جديد · ' + beneficiaryOfficeName(data.beneficiary) : 'إضافة المستفيد كمكتب جديد';
+            if (newOffice && data.beneficiary) newOffice.textContent = 'مكتب جديد · ' + beneficiaryOfficeName(data.beneficiary);
             office.value = match || (match === '' && data.beneficiary && newOffice ? '__new__' : '');
-            const countries = {ETHIOPIA:'ETHIOPIAN',UGANDA:'UGANDAN',PHILIPPINES:'FILIPINO','SRI LANKA':'SRI LANKAN',
-                INDIA:'INDIAN',BURUNDI:'BURUNDIAN',KENYA:'KENYAN',BANGLADESH:'BANGLADESHI',SOMALIA:'SOMALI'};
             country.value = countries[data.office_country] || '';
             fields.filter(field => field !== office && field !== country).forEach(field => { field.value = data[field.name] || ''; });
             updateOfficeFields();
-            status.textContent = position + (match === null ? ' · أكثر من مكتب مطابق. اختر المكتب الصحيح.' :
-                office.value === '__new__' ? ' · المكتب الجديد محدد. راجع الاسم والبلد قبل الحفظ.' : ' · راجع البيانات والمكتب قبل الحفظ.');
+            const missing = fields.filter(field => field.required && !field.value);
+            message(match === null ? 'أكثر من مكتب مطابق. اختر المكتب الصحيح.' :
+                missing.length ? 'بعض البيانات تحتاج مراجعة. افتح المعاينة وأكمل الحقول المطلوبة.' :
+                'تمت قراءة الملف. راجع البيانات قبل الحفظ.', missing.length > 0 || match === null);
         } catch (error) {
-            status.textContent = position + ' · ' + error.message + ' راجع الملف وأكمل البيانات يدويًا عند الحاجة.';
+            item.error = error.message + ' افتح المعاينة وأكمل البيانات يدويًا عند الحاجة.';
+            message(item.error, true);
         } finally {
+            snapshot();
             setBusy(false);
         }
     }
 
+    function addFiles(files) {
+        if (busy) return;
+        const accepted = [...files].filter(file => /\.(pdf|jpe?g|png|webp)$/i.test(file.name) && file.size > 0 && file.size <= 15*1024*1024);
+        const entries = accepted.map(file => ({file}));
+        queue.push(...entries);
+        renderQueue();
+        if (!active && entries.length) openFile(entries[0]);
+        else if (entries.length) message('تمت إضافة الملفات. اختَر أي ملف لمعاينته وقراءته.');
+        if (!entries.length && files.length) message('اختر PDF أو صورة JPG أو PNG أو WebP بحجم لا يتجاوز 15 ميجابايت.', true);
+    }
+
+    choose.addEventListener('click', () => input.click());
     input.addEventListener('change', () => {
-        queue = [...input.files];
-        index = saved = 0;
-        review();
+        addFiles(input.files);
+        input.value = '';
     });
-    skip.addEventListener('click', () => {
-        if (!busy) { index++; review(); }
+    drop.addEventListener('dragover', event => {
+        event.preventDefault();
+        drop.classList.toggle('is-dragover', !busy);
     });
+    drop.addEventListener('dragleave', () => drop.classList.remove('is-dragover'));
+    drop.addEventListener('drop', event => {
+        event.preventDefault();
+        drop.classList.remove('is-dragover');
+        addFiles(event.dataTransfer.files);
+    });
+
     form.addEventListener('submit', async event => {
         event.preventDefault();
-        if (busy || !queue[index]) return;
+        if (busy || !active) return;
+        snapshot();
+        const item = active;
         setBusy(true);
         const body = new FormData();
-        body.set('file',queue[index]);
-        body.set('data',JSON.stringify(Object.fromEntries(fields.map(field => [field.name,field.value.trim()]))));
+        body.set('file',item.file);
+        body.set('data',JSON.stringify(item.values));
         try {
             const response = await fetch(page.dataset.api,{
                 method:'POST', body, headers:{'X-CSRF-Token':document.querySelector('meta[name=csrf-token]').content},
             });
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'تعذر الحفظ.');
-            saved++;
-            if (queue.length === 1) {
-                window.location.assign(page.dataset.page + '?id=' + encodeURIComponent(data.id));
-                return;
-            }
-            index++;
-            await review();
+            if (!response.ok || !data.id) throw new Error(data.error || 'تعذر الحفظ.');
+            item.savedId = data.id;
+            item.error = null;
+            active = null;
         } catch (error) {
-            status.textContent = error.message;
+            item.error = error instanceof SyntaxError ? 'تعذر قراءة رد الخادم. راجع الاتصال وأعد المحاولة.' : error.message;
+            message(item.error, true);
         } finally {
             setBusy(false);
+        }
+        if (item.savedId) {
+            const next = queue.find(entry => !entry.savedId);
+            await openFile(next || null);
+            if (!next) message('تم حفظ الحوالة. افتحها من قائمة الملفات أو حدّث سجل الحوالات.');
         }
     });
 }

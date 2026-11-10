@@ -24,3 +24,19 @@
 @media(max-width:1150px){.bank-transfer-page .header{height:auto;min-height:86px;flex-wrap:wrap;padding-block:10px}.bank-transfer-page .header nav{order:3;width:100%;height:auto}}
 @media(max-width:600px){#transfers .paper{padding:16px}#transfers .transfer-heading{align-items:start;flex-direction:column}.bank-transfer-page .header nav a{padding:8px}}
 @media print{.bank-transfer-page,.bank-transfer-page #transfers .paper{background:#fff}.bank-transfer-page .header,.bank-transfer-page .breadcrumb,#transfers nav,#transfers .actions,#transfers .transfer-heading a{display:none!important}#transfers{padding:0}#transfers .paper{border:0;margin:0}}
+#transfer-review{border:0;margin:0;padding:0;min-width:0}
+.transfer-drop{border:1px dashed #ced9c8;background:#f7f9f4;border-radius:12px;text-align:center}
+.transfer-drop.is-dragover{background:#fff5e5;border-color:#d98b22}
+#choose-transfer-files{width:100%;padding:28px 14px;background:transparent;color:inherit;display:grid;gap:8px;justify-items:center}
+#choose-transfer-files svg,.transfer-file small{color:#788975}
+#choose-transfer-files small,.transfer-file small{display:block}
+.transfer-queue{display:grid;gap:8px;margin-top:14px}
+.transfer-file{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--line,#e9ebe6);border-radius:9px;padding:10px}
+.transfer-file>div{flex:1;min-width:180px;overflow-wrap:anywhere}
+.transfer-file.is-current{border-color:#dfa557;background:#fff9ef}
+#transfers .transfer-notice{padding:11px 14px;border:1px solid #e0e7d9;border-radius:9px;background:#f3f7ef;color:#31533c}
+#transfers .transfer-error{border-color:#efc6be;background:#fff1ed;color:#902f24}
+#transfers .transfer-remove{color:#902f24}
+.transfer-original iframe{width:100%;height:min(62vh,580px);border:1px solid var(--line,#e9ebe6);margin-top:8px}
+.transfer-original img,.transfer-original canvas{display:block;max-width:100%;max-height:60vh;margin:auto;object-fit:contain}
+#transfer-preview a{display:inline-block;color:#925508;margin-top:8px}

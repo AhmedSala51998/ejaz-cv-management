@@ -43,7 +43,7 @@ header('X-Content-Type-Options: nosniff');
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="<?=h(csrf())?>"><title>إيجاز | حوالات المكاتب الخارجية</title>
 <?php foreach ($manifest['main.tsx']['css'] ?? [] as $css): ?><link rel="stylesheet" href="<?=h(url('assets/'.$css))?>"><?php endforeach; ?>
-<link rel="stylesheet" href="<?=h(url('assets/bank-transfers.css?v=3'))?>"></head>
+<link rel="stylesheet" href="<?=h(url('assets/bank-transfers.css?v=4'))?>"></head>
 <body class="bank-transfer-page">
 <header class="header">
     <a class="brand" href="<?=h(url())?>"><img src="<?=h(url('logo.png'))?>" alt="شركة إيجاز للاستقدام"><span class="brand-divider"></span><span>مركز السير الذاتية<small>إدارة ملفات العمالة</small></span></a>
@@ -72,8 +72,17 @@ header('X-Content-Type-Options: nosniff');
 <section class="paper"><h2>إضافة حوالة بنكية</h2>
 <p>ارفع صور الحوالات أو ملفات PDF، وراجع كل نموذج واختر المكتب قبل الحفظ. تُقرأ الملفات في المتصفح.</p>
 <form id="transfer-form">
-<label>الملفات الأصلية<input id="transfer-files" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required></label>
-<p id="transfer-status" role="status" aria-live="polite"></p>
+<div class="transfer-drop" id="transfer-drop">
+<input id="transfer-files" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple hidden>
+<button type="button" id="choose-transfer-files">
+<svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m-5 5 5-5 5 5M4 16v4h16v-4"></path></svg>
+<strong>اسحب ملفات الحوالات هنا أو اضغط للاختيار</strong><small>PDF · JPG · PNG · WebP — حتى 15 ميجابايت لكل ملف</small>
+</button>
+</div>
+<div id="transfer-queue" class="transfer-queue" aria-label="ملفات الحوالات" hidden></div>
+<p id="transfer-status" class="notice transfer-notice" role="status" aria-live="polite" hidden></p>
+<details id="transfer-original" class="transfer-original" hidden><summary>معاينة الملف الأصلي</summary><div id="transfer-preview"></div></details>
+<fieldset id="transfer-review" hidden>
 <div class="grid">
 <label>المكتب الخارجي<select name="office_id" required><option value="">اختر المكتب</option>
 <?php foreach ($offices as $office): if (!(int)$office['active']) continue; ?><option value="<?=h($office['id'])?>"><?=h($office['name'])?></option><?php endforeach; ?>
@@ -89,8 +98,8 @@ $optional = in_array($key,['value_date','debit_sar','charges'],true); ?>
 <label><?=h($label)?><input name="<?=h($key)?>" type="<?=$type?>" <?=$optional ? '' : 'required'?> <?=in_array($key,['amount','debit_sar','charges'],true) ? 'inputmode="decimal" dir="ltr"' : ''?>></label>
 <?php endforeach; ?></div>
 <details><summary>النص المقروء للمراجعة</summary><pre id="transfer-text"></pre></details>
-<div class="actions"><button type="submit" id="save-transfer">حفظ الحوالة</button><button type="button" id="skip-transfer" hidden>تخطي إلى الملف التالي</button></div>
-</form></section>
+<div class="actions"><button type="submit" id="save-transfer">حفظ الحوالة</button></div>
+</fieldset></form></section>
 <?php endif; ?>
 <section class="paper"><h2>سجل الحوالات</h2>
 <form class="actions" method="get"><label>المكتب<select name="office"><option value="">كل المكاتب</option>
@@ -103,4 +112,4 @@ $optional = in_array($key,['value_date','debit_sar','charges'],true); ?>
 <?php if (count($rows)>25): ?><a href="?office=<?=rawurlencode($officeFilter)?>&amp;page=<?=$page+1?>">التالي</a><?php endif; ?></nav>
 </section>
 <?php endif; ?>
-</main><script type="module" src="<?=h(url('assets/bank-transfers.mjs?v=3'))?>"></script></body></html>
+</main><script type="module" src="<?=h(url('assets/bank-transfers.mjs?v=4'))?>"></script></body></html>
