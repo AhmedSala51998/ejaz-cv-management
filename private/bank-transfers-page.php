@@ -27,7 +27,10 @@ try {
     header('Cache-Control: private, no-store');
     exit('جدول الحوالات غير موجود في قاعدة بيانات الموقع. استورد database/bank-transfers-upgrade.sql يدويًا ثم أعد فتح الصفحة.');
 }
-$manifest = json_decode(file_get_contents(__DIR__.'/assets/manifest.json'), true);
+$manifestPath = APP_ROOT.'/assets/manifest.json';
+if (!is_file($manifestPath)) $manifestPath = APP_ROOT.'/assets/.vite/manifest.json';
+$manifestJson = is_readable($manifestPath) ? @file_get_contents($manifestPath) : false;
+$manifest = is_string($manifestJson) ? json_decode($manifestJson, true) : [];
 $links = [
     ['','رفع واستيراد','M12 16V4m-5 5 5-5 5 5M4 16v4h16v-4'],
     ['records','السير الذاتية','M8 3h9l4 4v11H8zM3 7v14h14'],
