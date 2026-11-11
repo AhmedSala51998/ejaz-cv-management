@@ -31,11 +31,11 @@ if (!is_file($manifestPath)) $manifestPath = APP_ROOT.'/assets/.vite/manifest.js
 $manifestJson = is_readable($manifestPath) ? @file_get_contents($manifestPath) : false;
 $manifest = is_string($manifestJson) ? json_decode($manifestJson, true) : [];
 $links = [
-    ['','رفع واستيراد','M12 16V4m-5 5 5-5 5 5M4 16v4h16v-4'],
-    ['records','السير الذاتية','M8 3h9l4 4v11H8zM3 7v14h14'],
-    ['tickets','تذاكر السفر','m3 11 7 2 2 7 2-1 1-5 5-5c2-2 1-4-1-3l-6 5-8-2z'],
-    ['bank-transfers','الحوالات البنكية','M3 10h18L12 3 3 10zm2 4v4m5-4v4m4-4v4m5-4v4M3 22h18'],
-    ['offices','مكاتب الاستقدام','M4 21V5h10v16m0-12h6v12M2 21h20M8 9h2m-2 4h2m-2 4h2'],
+    ['','رفع واستيراد',['M12 13v8', 'M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242', 'm8 17 4-4 4 4']],
+    ['records','السير الذاتية',['M15 2h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8', 'M16.706 2.706A2.4 2.4 0 0 0 15 2v5a1 1 0 0 0 1 1h5a2.4 2.4 0 0 0-.706-1.706z', 'M5 7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h8a2 2 0 0 0 1.732-1']],
+    ['tickets','تذاكر السفر',['M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z']],
+    ['bank-transfers','الحوالات البنكية',['M3 10h18L12 3 3 10zm2 4v4m5-4v4m4-4v4m5-4v4M3 22h18']],
+    ['offices','مكاتب الاستقدام',['M10 12h4', 'M10 8h4', 'M14 21v-3a2 2 0 0 0-4 0v3', 'M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2', 'M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16']],
 ];
 header('Cache-Control: private, no-store');
 header('X-Content-Type-Options: nosniff');
@@ -49,10 +49,10 @@ header('X-Content-Type-Options: nosniff');
     <a class="brand" href="<?=h(url())?>"><img src="<?=h(url('logo.png'))?>" alt="شركة إيجاز للاستقدام"><span class="brand-divider"></span><span>مركز السير الذاتية<small>إدارة ملفات العمالة</small></span></a>
     <nav aria-label="روابط الموقع">
     <?php foreach ($links as [$path,$title,$icon]): ?>
-        <a href="<?=h(url($path))?>" <?=$path==='bank-transfers'?'class="active" aria-current="page"':''?>><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="<?=h($icon)?>"></path></svg><?=$title?></a>
+        <a href="<?=h(url($path))?>" <?=$path==='bank-transfers'?'class="active" aria-current="page"':''?>><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><?php foreach ($icon as $iconPath): ?><path d="<?=h($iconPath)?>"></path><?php endforeach; ?></svg><?=$title?></a>
     <?php endforeach; ?>
     </nav>
-    <div class="private"><span>مساحة عمل خاصة</span><button type="button" class="text-button" id="transfer-logout" data-url="<?=h(url('api/auth/logout'))?>" data-login="<?=h(url('login'))?>">خروج</button></div>
+    <div class="private"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg><span>مساحة عمل خاصة</span><button type="button" class="text-button" id="transfer-logout" data-url="<?=h(url('api/auth/logout'))?>" data-login="<?=h(url('login'))?>">خروج</button></div>
 </header>
 <div class="breadcrumb">إيجاز للاستقدام <span>/</span> مركز السير الذاتية <span>/</span> <strong>الحوالات البنكية</strong></div>
 <main id="transfers" data-page="<?=h(url('bank-transfers'))?>" data-api="<?=h(url('api/bank-transfers'))?>"
