@@ -18,7 +18,14 @@ body .photo-frame>img,body .worker-photo{object-fit:contain;object-position:cent
 </style>
 <?php foreach($entry['css']??[]as$css):?><link rel="stylesheet" href="<?=h(url('assets/'.$css))?>"><?php endforeach;?>
 <?php if ($view === "records"): ?>
-<style media="print">#root .cv-office-bulk{display:none!important}</style>
+<style media="print">
+    #root .cv-office-bulk {
+        display: none !important;
+    }
+    #root .cv-document > .cvd-body {
+        padding-inline: 0 !important;
+    }
+</style>
 <?php endif; ?>
 <script>window.__EJAZ_BASE__=<?=json_encode($base,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;window.__EJAZ_VIEW__=<?=json_encode($view)?>;</script>
 </head><body><div id="boot-screen" class="startup-loader" role="status"><div class="loader-brand">إيجاز<span>مركز السير الذاتية</span></div><div class="loader-orbit"></div><strong>بنجهّز مساحة عملك</strong><p>جارٍ تحميل الموقع والأدوات…</p><div class="loader-track"><i></i></div><noscript>يرجى تفعيل JavaScript لاستخدام أدوات استخراج السير.</noscript></div><div id="root"></div><script>
